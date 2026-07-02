@@ -1,16 +1,35 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>StudyHub</title>
-</head>
+{% extends 'base.html' %}
 
-<body>
+{% block content %}
 
-    <h1>Welcome to StudyHub</h1>
+<div class="container text-center mt-5">
 
-    <h2>Study Together. Stay Focused.</h2>
+    <h1 class="display-3 fw-bold">
+        Welcome to StudyHub AI
+    </h1>
 
-    <p>This is our Final Year Project.</p>
+    <p class="lead mt-4">
+        Study Together. Stay Focused.
+    </p>
 
-</body>
-</html>
+    <p class="text-muted">
+        The best platform for students to study together,
+        manage tasks and stay productive.
+    </p>
+
+    <div class="mt-4">
+
+        <a href="#" class="btn btn-primary btn-lg">
+            Get Started
+        </a>
+
+        <a href="#" class="btn btn-outline-dark btn-lg ms-2">
+            Explore Rooms
+        </a>
+
+    </div>
+
+</div>
+
+
+{% endblock %}
