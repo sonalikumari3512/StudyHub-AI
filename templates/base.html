@@ -71,6 +71,14 @@
 
                 </li>
 
+                <li class="nav-item">
+
+                    <a class="nav-link" href="{% url 'students' %}">
+                           Students
+                    </a>
+
+                </li>
+
             </ul>
 
          </div>
@@ -78,7 +86,19 @@
      </div>
 
      </nav>
+    <div class="container mt-3">
 
+    {% for message in messages %}
+
+        <div class="alert alert-success">
+
+            {{ message }}
+
+        </div>
+
+    {% endfor %}
+
+   </div>
     {% block content %}
 
     {% endblock %}
