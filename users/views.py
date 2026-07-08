@@ -1,9 +1,9 @@
 from django.shortcuts import render, redirect
 from .models import UserProfile
-from django.contrib.auth import login
 from .forms import RegisterUserForm
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth import login, logout
+from django.contrib.auth.decorators import login_required
 
 def home(request):
     return render(request, "users/home.html")
@@ -38,6 +38,19 @@ def login_user(request):
 
     return render(request, "users/login.html", {"form": form})
 
+
+
+@login_required
+def profile(request):
+    profile = UserProfile.objects.get(user=request.user)
+
+    return render(
+        request,
+        "users/profile.html",
+        {
+            "profile": profile
+        }
+    )
 
 
 def logout_user(request):

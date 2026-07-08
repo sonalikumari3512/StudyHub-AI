@@ -84,13 +84,15 @@
                 </li>
 
                 {% endif %}
+                {% if user.is_authenticated %}
+
                 <li class="nav-item">
-
-                    <a class="nav-link" href="{% url 'students' %}">
-                           Students
+                    <a class="nav-link" href="{% url 'profile' %}">
+                        My Profile
                     </a>
-
                 </li>
+
+                {% endif %}
 
             </ul>
 
