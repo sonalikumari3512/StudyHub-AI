@@ -17,7 +17,14 @@
         <p><strong>Year:</strong> {{ profile.year }}</p>
 
         <p><strong>Branch:</strong> {{ profile.branch }}</p>
+        <a
+            href="{% url 'edit_profile' %}"
+            class="btn btn-success mt-3"
+        >
+            Edit Profile
+        </a>
 
+       
     </div>
 
 </div>

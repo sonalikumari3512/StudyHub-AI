@@ -1,9 +1,9 @@
 from django.shortcuts import render, redirect
 from .models import UserProfile
-from .forms import RegisterUserForm
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
+from .forms import RegisterUserForm, ProfileForm
 
 def home(request):
     return render(request, "users/home.html")
@@ -49,6 +49,37 @@ def profile(request):
         "users/profile.html",
         {
             "profile": profile
+        }
+    )
+
+
+@login_required
+def edit_profile(request):
+
+    profile = UserProfile.objects.get(user=request.user)
+
+    if request.method == "POST":
+
+        form = ProfileForm(
+            request.POST,
+            instance=profile
+        )
+
+        if form.is_valid():
+
+            form.save()
+
+            return redirect("profile")
+
+    else:
+
+        form = ProfileForm(instance=profile)
+
+    return render(
+        request,
+        "users/edit_profile.html",
+        {
+            "form": form
         }
     )
 
