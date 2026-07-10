@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container mt-5">
+
+    <h2>Dashboard</h2>
+
+    <hr>
+
+    <div class="card p-4">
+
+        <h4>Welcome {{ request.user.username }} 👋</h4>
+
+        <p><strong>College:</strong> {{ profile.college }}</p>
+
+        <p><strong>Year:</strong> {{ profile.year }}</p>
+
+        <p><strong>Branch:</strong> {{ profile.branch }}</p>
+
+    </div>
+
+</div>
+
+{% endblock %}

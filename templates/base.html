@@ -40,26 +40,34 @@
             <ul class="navbar-nav ms-auto">
 
                 <li class="nav-item">
-
                     <a class="nav-link active" href="#">
                         Home
                     </a>
-
                 </li>
 
                 <li class="nav-item">
-
                     <a class="nav-link" href="#">
                         Rooms
                     </a>
-
                 </li>
 
                 {% if user.is_authenticated %}
 
                 <li class="nav-item">
+                    <a class="nav-link" href="{% url 'dashboard' %}">
+                        Dashboard
+                    </a>
+                </li>
+
+                <li class="nav-item">
                     <a class="nav-link">
                         Welcome {{ user.username }} 👋
+                    </a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'profile' %}">
+                        My Profile
                     </a>
                 </li>
 
@@ -80,15 +88,6 @@
                 <li class="nav-item">
                     <a class="nav-link" href="{% url 'register' %}">
                         Register
-                    </a>
-                </li>
-
-                {% endif %}
-                {% if user.is_authenticated %}
-
-                <li class="nav-item">
-                    <a class="nav-link" href="{% url 'profile' %}">
-                        My Profile
                     </a>
                 </li>
 
