@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container mt-5">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="fw-bold">📚 Study Rooms</h1>
+            <p class="text-muted">Join a room and start learning together! 🚀</p>
+        </div>
+
+        <a href="{% url 'create_room' %}" class="btn btn-success btn-lg">
+            ➕ Create Room
+        </a>
+    </div>
+
+    <div class="row">
+
+        {% for room in rooms %}
+
+        <div class="col-md-6 mb-4">
+
+            <div class="card shadow-sm border-0 rounded-4 h-100">
+
+                <div class="card-body">
+
+                    <h3 class="card-title text-primary">
+                        📖 {{ room.name }}
+                    </h3>
+
+                    <p class="text-muted">
+                        {{ room.description }}
+                    </p>
+
+                    <hr>
+
+                    <p class="mb-2">
+                        👩‍🏫 <strong>Host:</strong>
+                        {{ room.host.username }}
+                    </p>
+
+                    <a href="#" class="btn btn-danger w-100 rounded-pill">
+                        💕 Join Room
+                    </a>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        {% empty %}
+
+        <div class="text-center mt-5">
+
+            <h3>😢 No Study Rooms Yet</h3>
+
+            <p class="text-muted">
+                Be the first one to create a study room!
+            </p>
+
+            <a href="{% url 'create_room' %}" class="btn btn-success">
+                ➕ Create First Room
+            </a>
+
+        </div>
+
+        {% endfor %}
+
+    </div>
+
+</div>
+
+{% endblock %}

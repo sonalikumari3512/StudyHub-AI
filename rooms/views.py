@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from .forms import RoomForm
+from .models import Room
 
 @login_required
 def createRoom(request):
@@ -29,4 +30,16 @@ def createRoom(request):
         request,
         "rooms/create_room.html",
         context
+    )
+
+
+def rooms(request):
+    rooms = Room.objects.all()
+
+    return render(
+        request,
+        "rooms/rooms.html",
+        {
+            "rooms": rooms
+        }
     )
