@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from .forms import RoomForm
 from .models import Room
+from django.shortcuts import get_object_or_404
 
 @login_required
 def createRoom(request):
@@ -41,5 +42,16 @@ def rooms(request):
         "rooms/rooms.html",
         {
             "rooms": rooms
+        }
+    )
+
+def room_detail(request, pk):
+    room = get_object_or_404(Room, id=pk)
+
+    return render(
+        request,
+        "rooms/room_detail.html",
+        {
+            "room": room
         }
     )

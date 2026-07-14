@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container mt-5">
+
+    <h1>{{ room.name }}</h1>
+
+    <hr>
+
+    <p>{{ room.description }}</p>
+
+    <p>
+        <strong>Host:</strong>
+        {{ room.host.username }}
+    </p>
+
+</div>
+
+{% endblock %}

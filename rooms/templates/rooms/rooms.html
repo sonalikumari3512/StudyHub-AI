@@ -40,7 +40,7 @@
                         {{ room.host.username }}
                     </p>
 
-                    <a href="#" class="btn btn-danger w-100 rounded-pill">
+                    <a href="{% url 'room_detail' room.id %}" class="btn btn-danger w-100 rounded-pill">
                         💕 Join Room
                     </a>
 
