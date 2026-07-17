@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from .forms import RoomForm
 from .models import Room
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404,redirect
 
 @login_required
 def createRoom(request):
@@ -55,3 +55,12 @@ def room_detail(request, pk):
             "room": room
         }
     )
+
+@login_required
+def join_room(request, pk):
+
+    room = get_object_or_404(Room, id=pk)
+
+    room.members.add(request.user)
+
+    return redirect("room_detail", pk=pk)
