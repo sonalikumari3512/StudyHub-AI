@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
-from .forms import RoomForm
-from .models import Room
+from .forms import RoomForm,MessageForm
+from .models import Room,Message
 from django.shortcuts import get_object_or_404,redirect
 
 @login_required
@@ -45,16 +45,40 @@ def rooms(request):
         }
     )
 
+
 def room_detail(request, pk):
+
     room = get_object_or_404(Room, id=pk)
+
+    if request.method == "POST":
+
+        form = MessageForm(request.POST)
+
+        if form.is_valid():
+
+            message = form.save(commit=False)
+
+            message.room = room
+
+            message.user = request.user
+
+            message.save()
+
+            return redirect("room_detail", pk=pk)
+
+    else:
+
+        form = MessageForm()
 
     return render(
         request,
         "rooms/room_detail.html",
         {
-            "room": room
+            "room": room,
+            "form": form,
         }
     )
+
 
 @login_required
 def join_room(request, pk):

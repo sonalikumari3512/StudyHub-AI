@@ -4,22 +4,94 @@
 
 <div class="container mt-5">
 
-    <h1>{{ room.name }}</h1>
+    <!-- Room Details -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
 
-    <hr>
+            <h2>{{ room.name }}</h2>
+            <p class="text-muted">{{ room.description }}</p>
 
-    <p>{{ room.description }}</p>
+            <hr>
 
-    <p>
-        <strong>Host:</strong>
-        {{ room.host.username }}
-    </p>
+            <div class="row">
+                <div class="col-md-6">
+                    <strong>👩‍🏫 Host:</strong>
+                    {{ room.host.username }}
+                </div>
 
-    <p>
-        <strong>Members:</strong>
+                <div class="col-md-6 text-md-end">
+                    <strong>👥 Members:</strong>
+                    {{ room.members.count }}
+                </div>
+            </div>
 
-        {{ room.members.count }}
-    </p>
+        </div>
+    </div>
+
+
+    <!-- Messages -->
+    <div class="card shadow-sm">
+
+        <div class="card-header bg-dark text-white">
+            💬 Room Chat
+        </div>
+
+        <div class="card-body" style="max-height:450px; overflow-y:auto;">
+
+            {% for message in room.messages.all %}
+
+            <div class="border rounded p-3 mb-3">
+
+                <div class="d-flex justify-content-between">
+
+                    <strong>{{ message.user.username }}</strong>
+
+                    <small class="text-muted">
+                        {{ message.created_at|date:"d M Y, h:i A" }}
+                    </small>
+
+                </div>
+
+                <p class="mt-2 mb-0">
+                    {{ message.body }}
+                </p>
+
+            </div>
+
+            {% empty %}
+
+            <div class="text-center text-muted">
+                <h5>No messages yet 👋</h5>
+                <p>Start the conversation.</p>
+            </div>
+
+            {% endfor %}
+
+        </div>
+
+    </div>
+
+
+    <!-- Send Message -->
+    <div class="card shadow-sm mt-4">
+
+        <div class="card-body">
+
+            <form method="POST">
+
+                {% csrf_token %}
+
+                {{ form.as_p }}
+
+                <button class="btn btn-primary">
+                    📩 Send Message
+                </button>
+
+            </form>
+
+        </div>
+
+    </div>
 
 </div>
 
