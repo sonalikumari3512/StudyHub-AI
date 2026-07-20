@@ -1,8 +1,10 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from .forms import RoomForm,MessageForm
-from .models import Room,Message
-from django.shortcuts import get_object_or_404,redirect
+from django.http import HttpResponseForbidden
+
+from .models import Room
+from .forms import RoomForm, MessageForm
+
 
 @login_required
 def createRoom(request):
@@ -23,18 +25,17 @@ def createRoom(request):
 
             return redirect("/dashboard/")
 
-    context = {
-        "form": form
-    }
-
     return render(
         request,
         "rooms/create_room.html",
-        context
+        {
+            "form": form
+        }
     )
 
 
 def rooms(request):
+
     rooms = Room.objects.all()
 
     return render(
@@ -46,11 +47,23 @@ def rooms(request):
     )
 
 
+@login_required
 def room_detail(request, pk):
 
     room = get_object_or_404(Room, id=pk)
 
+    # Check whether current user is a member
+    if request.user.is_authenticated:
+        is_member = room.members.filter(id=request.user.id).exists()
+    else:
+        is_member = False
     if request.method == "POST":
+
+        # Security check
+        if not is_member:
+            return HttpResponseForbidden(
+                "You must join this room before sending messages."
+            )
 
         form = MessageForm(request.POST)
 
@@ -76,6 +89,7 @@ def room_detail(request, pk):
         {
             "room": room,
             "form": form,
+            "is_member": is_member,
         }
     )
 
@@ -85,6 +99,8 @@ def join_room(request, pk):
 
     room = get_object_or_404(Room, id=pk)
 
-    room.members.add(request.user)
+    if request.user not in room.members.all():
+
+        room.members.add(request.user)
 
     return redirect("room_detail", pk=pk)

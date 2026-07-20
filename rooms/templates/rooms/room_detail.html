@@ -4,90 +4,174 @@
 
 <div class="container mt-5">
 
-    <!-- Room Details -->
+    <!-- Room Information -->
     <div class="card shadow-sm mb-4">
         <div class="card-body">
 
             <h2>{{ room.name }}</h2>
-            <p class="text-muted">{{ room.description }}</p>
+
+            <p class="text-muted">
+                {{ room.description }}
+            </p>
 
             <hr>
 
             <div class="row">
+
                 <div class="col-md-6">
-                    <strong>👩‍🏫 Host:</strong>
+                    👩‍🏫 <strong>Host:</strong>
                     {{ room.host.username }}
                 </div>
 
                 <div class="col-md-6 text-md-end">
-                    <strong>👥 Members:</strong>
+                    👥 <strong>Members:</strong>
                     {{ room.members.count }}
                 </div>
+
             </div>
 
         </div>
     </div>
 
+    <div class="row">
 
-    <!-- Messages -->
-    <div class="card shadow-sm">
+        <!-- Chat Section -->
+        <div class="col-lg-8">
 
-        <div class="card-header bg-dark text-white">
-            💬 Room Chat
-        </div>
+            {% if is_member %}
 
-        <div class="card-body" style="max-height:450px; overflow-y:auto;">
+            <div class="card shadow-sm">
 
-            {% for message in room.messages.all %}
+                <div class="card-header bg-dark text-white">
+                    💬 Room Chat
+                </div>
 
-            <div class="border rounded p-3 mb-3">
+                <div class="card-body"
+                     style="height:450px; overflow-y:auto;">
 
-                <div class="d-flex justify-content-between">
+                    {% for message in room.messages.all %}
 
-                    <strong>{{ message.user.username }}</strong>
+                    <div class="border rounded p-3 mb-3">
 
-                    <small class="text-muted">
-                        {{ message.created_at|date:"d M Y, h:i A" }}
-                    </small>
+                        <div class="d-flex justify-content-between">
+
+                            <strong>
+                                👤 {{ message.user.username }}
+                            </strong>
+
+                            <small class="text-muted">
+                                {{ message.created_at|date:"d M Y, h:i A" }}
+                            </small>
+
+                        </div>
+
+                        <p class="mt-2 mb-0">
+                            {{ message.body }}
+                        </p>
+
+                    </div>
+
+                    {% empty %}
+
+                    <div class="text-center text-muted mt-5">
+
+                        <h5>No messages yet 👋</h5>
+
+                        <p>Start the conversation.</p>
+
+                    </div>
+
+                    {% endfor %}
 
                 </div>
 
-                <p class="mt-2 mb-0">
-                    {{ message.body }}
+            </div>
+
+            <div class="card shadow-sm mt-3">
+
+                <div class="card-body">
+
+                    <form method="POST">
+
+                        {% csrf_token %}
+
+                        {{ form.as_p }}
+
+                        <button class="btn btn-primary">
+                            📩 Send Message
+                        </button>
+
+                    </form>
+
+                </div>
+
+            </div>
+
+            {% else %}
+
+            <div class="alert alert-warning">
+
+                <h4>🔒 Members Only</h4>
+
+                <p>
+                    Join this room to view messages and participate in discussions.
                 </p>
 
+                <a href="{% url 'join_room' room.id %}"
+                   class="btn btn-success">
+
+                    Join Room
+
+                </a>
+
             </div>
 
-            {% empty %}
-
-            <div class="text-center text-muted">
-                <h5>No messages yet 👋</h5>
-                <p>Start the conversation.</p>
-            </div>
-
-            {% endfor %}
+            {% endif %}
 
         </div>
 
-    </div>
+        <!-- Members Section -->
+        <div class="col-lg-4">
 
+            <div class="card shadow-sm">
 
-    <!-- Send Message -->
-    <div class="card shadow-sm mt-4">
+                <div class="card-header bg-primary text-white">
 
-        <div class="card-body">
+                    👥 Members
 
-            <form method="POST">
+                </div>
 
-                {% csrf_token %}
+                <ul class="list-group list-group-flush">
 
-                {{ form.as_p }}
+                    {% for member in room.members.all %}
 
-                <button class="btn btn-primary">
-                    📩 Send Message
-                </button>
+                    <li class="list-group-item d-flex justify-content-between">
 
-            </form>
+                        <span>
+                            👤 {{ member.username }}
+                        </span>
+
+                        {% if member == room.host %}
+                        <span class="badge bg-success">
+                            Host
+                        </span>
+                        {% endif %}
+
+                    </li>
+
+                    {% empty %}
+
+                    <li class="list-group-item">
+
+                        No members yet.
+
+                    </li>
+
+                    {% endfor %}
+
+                </ul>
+
+            </div>
 
         </div>
 
