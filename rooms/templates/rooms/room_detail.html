@@ -68,6 +68,21 @@
                         <p class="mt-2 mb-0">
                             {{ message.body }}
                         </p>
+                        {% if request.user == message.user %}
+
+                    <div class="mt-2">
+
+                        <a href="#" class="btn btn-sm btn-warning">
+                            ✏ Edit
+                        </a>
+
+                        <a href="{% url 'delete_message' message.id %}" class="btn btn-sm btn-danger">
+                            🗑 Delete
+                        </a>
+
+                    </div>
+
+                    {% endif %}
 
                     </div>
 

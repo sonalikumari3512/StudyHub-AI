@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseForbidden
 
-from .models import Room
+from .models import Room,Message
 from .forms import RoomForm, MessageForm
 
 
@@ -52,17 +52,13 @@ def room_detail(request, pk):
 
     room = get_object_or_404(Room, id=pk)
 
-    # Check whether current user is a member
-    if request.user.is_authenticated:
-        is_member = room.members.filter(id=request.user.id).exists()
-    else:
-        is_member = False
+    is_member = room.members.filter(id=request.user.id).exists()
+
     if request.method == "POST":
 
-        # Security check
         if not is_member:
             return HttpResponseForbidden(
-                "You must join this room before sending messages."
+                "Join the room first."
             )
 
         form = MessageForm(request.POST)
@@ -93,7 +89,6 @@ def room_detail(request, pk):
         }
     )
 
-
 @login_required
 def join_room(request, pk):
 
@@ -104,3 +99,18 @@ def join_room(request, pk):
         room.members.add(request.user)
 
     return redirect("room_detail", pk=pk)
+
+
+@login_required
+def delete_message(request, pk):
+
+    message = get_object_or_404(Message, id=pk)
+
+    if message.user != request.user:
+        return HttpResponseForbidden("You cannot delete this message.")
+
+    room_id = message.room.id
+
+    message.delete()
+
+    return redirect("room_detail", pk=room_id)
