@@ -89,14 +89,16 @@ def room_detail(request, pk):
         }
     )
 
+
 @login_required
 def join_room(request, pk):
 
     room = get_object_or_404(Room, id=pk)
 
-    if request.user not in room.members.all():
+    if request.method == "POST":
 
-        room.members.add(request.user)
+        if not room.members.filter(id=request.user.id).exists():
+            room.members.add(request.user)
 
     return redirect("room_detail", pk=pk)
 
@@ -107,10 +109,59 @@ def delete_message(request, pk):
     message = get_object_or_404(Message, id=pk)
 
     if message.user != request.user:
-        return HttpResponseForbidden("You cannot delete this message.")
+        return HttpResponseForbidden(
+            "You cannot delete this message."
+        )
 
-    room_id = message.room.id
+    if request.method == "POST":
 
-    message.delete()
+        room_id = message.room.id
 
-    return redirect("room_detail", pk=room_id)
+        message.delete()
+
+        return redirect("room_detail", pk=room_id)
+
+    return render(
+        request,
+        "rooms/delete_message.html",
+        {
+            "message": message
+        }
+    )
+
+@login_required
+def edit_message(request, pk):
+
+    message = get_object_or_404(Message, id=pk)
+
+    if message.user != request.user:
+        return HttpResponseForbidden(
+            "You cannot edit this message."
+        )
+
+    if request.method == "POST":
+
+        form = MessageForm(
+            request.POST,
+            instance=message
+        )
+
+        if form.is_valid():
+            form.save()
+
+            return redirect(
+                "room_detail",
+                pk=message.room.id
+            )
+
+    else:
+
+        form = MessageForm(instance=message)
+
+    return render(
+        request,
+        "rooms/edit_message.html",
+        {
+            "form": form
+        }
+    )

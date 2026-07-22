@@ -72,7 +72,7 @@
 
                     <div class="mt-2">
 
-                        <a href="#" class="btn btn-sm btn-warning">
+                        <a href="{% url 'edit_message' message.id %}" class="btn btn-sm btn-warning">
                             ✏ Edit
                         </a>
 
@@ -132,12 +132,19 @@
                     Join this room to view messages and participate in discussions.
                 </p>
 
-                <a href="{% url 'join_room' room.id %}"
-                   class="btn btn-success">
+                <form method="POST"
+                action="{% url 'join_room' room.id %}">
+
+                {% csrf_token %}
+
+                <button
+                    class="btn btn-success">
 
                     Join Room
 
-                </a>
+                </button>
+
+            </form>
 
             </div>
 
