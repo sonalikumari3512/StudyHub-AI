@@ -4,6 +4,7 @@ from django.http import HttpResponseForbidden
 
 from .models import Room,Message
 from .forms import RoomForm, MessageForm
+from django.db.models import Q
 
 
 @login_required
@@ -36,13 +37,26 @@ def createRoom(request):
 
 def rooms(request):
 
-    rooms = Room.objects.all()
+    query = request.GET.get("q")
+
+    if query:
+
+        rooms = Room.objects.filter(
+            Q(name__icontains=query) |
+            Q(description__icontains=query) |
+            Q(host__username__icontains=query)
+        ).order_by("-created")
+
+    else:
+
+        rooms = Room.objects.all().order_by("-created")
 
     return render(
         request,
         "rooms/rooms.html",
         {
-            "rooms": rooms
+            "rooms": rooms,
+            "query": query,
         }
     )
 
@@ -165,3 +179,14 @@ def edit_message(request, pk):
             "form": form
         }
     )
+
+@login_required
+def leave_room(request, pk):
+
+    room = get_object_or_404(Room, id=pk)
+
+    if request.method == "POST":
+
+        room.members.remove(request.user)
+
+    return redirect("rooms")

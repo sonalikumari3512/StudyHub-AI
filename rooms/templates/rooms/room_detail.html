@@ -39,7 +39,22 @@
         <div class="col-lg-8">
 
             {% if is_member %}
+            <span class="badge bg-success">
+                ✅ Joined
+            </span>
+                        <!-- Leave Room Button -->
+            <form method="POST"
+                action="{% url 'leave_room' room.id %}"
+                class="mb-3">
 
+                {% csrf_token %}
+
+                <button class="btn btn-danger">
+                    🚪 Leave Room
+                </button>
+
+            </form>
+             <!-- Chat Card -->
             <div class="card shadow-sm">
 
                 <div class="card-header bg-dark text-white">
@@ -174,8 +189,8 @@
                         </span>
 
                         {% if member == room.host %}
-                        <span class="badge bg-success">
-                            Host
+                        <span class="badge bg-warning text-dark">
+                            👑 Host
                         </span>
                         {% endif %}
 
