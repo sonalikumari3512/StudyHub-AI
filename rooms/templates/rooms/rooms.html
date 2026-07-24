@@ -2,70 +2,72 @@
 
 {% block content %}
 
-<div class="container mt-5">
+<div class="container-fluid px-5 mt-5">
 
+    <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
+
         <div>
             <h1 class="fw-bold">📚 Study Rooms</h1>
-            <p class="text-muted">Join a room and start learning together! 🚀</p>
+            <p class="text-muted">
+                Join a room and start learning together! 🚀
+            </p>
         </div>
-        
+
         <a href="{% url 'create_room' %}" class="btn btn-success btn-lg">
             ➕ Create Room
         </a>
+
     </div>
+
+    <!-- Search -->
     <form method="GET" class="mb-4">
 
-    <div class="input-group">
+        <div class="input-group">
 
-        <input
-            type="text"
-            name="q"
-            class="form-control"
-            placeholder="Search by rooms name..."
-            value="{{ query }}">
+            <input
+                type="text"
+                name="q"
+                class="form-control"
+                placeholder="Search rooms..."
+                value="{{ query }}">
 
-        <button
-            class="btn btn-primary">
+            <button class="btn btn-primary">
+                🔍 Search
+            </button>
 
-            🔍 Search
+        </div>
 
-        </button>
+    </form>
 
-     </div>
-
-   </form>
     <div class="row">
 
-        {% for room in rooms %}
+        <!-- LEFT SIDEBAR -->
+        <div class="col-lg-3">
 
-        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm">
 
-            <div class="card shadow-sm border-0 rounded-4 h-100">
+                <div class="card-header bg-dark text-white">
+                    📂 Topics
+                </div>
 
-                <div class="card-body">
+                <div class="list-group list-group-flush">
 
-                    <h3 class="card-title text-primary">
-                        📖 {{ room.name }}
-                    </h3>
+                    <a href="{% url 'rooms' %}"
+                       class="list-group-item list-group-item-action">
+                        🌍 All Topics
+                    </a>
 
-                    <p class="text-muted">
-                        {{ room.description }}
-                    </p>
+                    {% for topic in topics %}
 
-                    <hr>
+                    <a href="{% url 'rooms' %}?topic={{ topic.id }}"
+                       class="list-group-item list-group-item-action">
 
-                    <p class="mb-2">
-                        👩‍🏫 <strong>Host:</strong>
-                        {{ room.host.username }}
-                    </p>
+                        {{ topic.name }}
 
-                    <a href="{% url 'room_detail' room.id %}"
-                        class="btn btn-primary w-100 rounded-pill">
+                    </a>
 
-                            👀 View Room
-
-                        </a>
+                    {% endfor %}
 
                 </div>
 
@@ -73,23 +75,90 @@
 
         </div>
 
-        {% empty %}
+        <!-- RIGHT SIDE -->
+        <div class="col-lg-9">
 
-        <div class="text-center mt-5">
+            <div class="row">
 
-            <h3>😢 No Study Rooms Yet</h3>
+                {% for room in rooms %}
 
-            <p class="text-muted">
-                Try another search or create a new room.
-            </p>
+                <div class="col-md-6 mb-4">
 
-            <a href="{% url 'create_room' %}" class="btn btn-success">
-                ➕ Create First Room
-            </a>
+                    <div class="card shadow border-0 rounded-4 h-100">
+
+                        <div class="card-body">
+
+                            <span class="badge bg-primary fs-6 mb-2">
+
+                                {{ room.topic.name|default:"No Topic" }}
+
+                            </span>
+
+                            <h4 class="text-primary">
+
+                                📖 {{ room.name }}
+
+                            </h4>
+
+                            <p class="text-muted">
+
+                                {{ room.description }}
+
+                            </p>
+
+                            <hr>
+
+                            <p>
+
+                                👩‍🏫 <strong>Host:</strong>
+
+                                {{ room.host.username }}
+
+                            </p>
+
+                        </div>
+
+                        <div class="card-footer bg-white border-0">
+
+                            <a href="{% url 'room_detail' room.id %}"
+                               class="btn btn-primary w-100 rounded-pill">
+
+                                👀 View Room
+
+                            </a>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                {% empty %}
+
+                <div class="col-12 text-center mt-5">
+
+                    <h3>😢 No Study Rooms Found</h3>
+
+                    <p class="text-muted">
+
+                        Try another search or create a room.
+
+                    </p>
+
+                    <a href="{% url 'create_room' %}"
+                       class="btn btn-success">
+
+                        ➕ Create First Room
+
+                    </a>
+
+                </div>
+
+                {% endfor %}
+
+            </div>
 
         </div>
-
-        {% endfor %}
 
     </div>
 

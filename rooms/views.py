@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseForbidden
 
-from .models import Room,Message
+from .models import Room,Message,Topic
 from .forms import RoomForm, MessageForm
 from django.db.models import Q
 
@@ -35,27 +35,34 @@ def createRoom(request):
     )
 
 
+
 def rooms(request):
 
-    query = request.GET.get("q")
+    query = request.GET.get("q", "")
+    topic_id = request.GET.get("topic")
+
+    topics = Topic.objects.all()
+
+    rooms = Room.objects.all()
+
+    if topic_id:
+        rooms = rooms.filter(topic_id=topic_id)
 
     if query:
-
-        rooms = Room.objects.filter(
+        rooms = rooms.filter(
             Q(name__icontains=query) |
             Q(description__icontains=query) |
             Q(host__username__icontains=query)
-        ).order_by("-created")
+        )
 
-    else:
-
-        rooms = Room.objects.all().order_by("-created")
+    rooms = rooms.order_by("-created")
 
     return render(
         request,
         "rooms/rooms.html",
         {
             "rooms": rooms,
+            "topics": topics,
             "query": query,
         }
     )

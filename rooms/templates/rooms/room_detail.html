@@ -10,10 +10,13 @@
 
             <h2>{{ room.name }}</h2>
 
-            <p class="text-muted">
+            <span class="badge bg-primary mb-2">
+                {{ room.topic.name|default:"No Topic" }}
+            </span>
+
+            <p class="text-muted mt-2">
                 {{ room.description }}
             </p>
-
             <hr>
 
             <div class="row">
@@ -39,21 +42,19 @@
         <div class="col-lg-8">
 
             {% if is_member %}
-            <span class="badge bg-success">
-                ✅ Joined
-            </span>
-                        <!-- Leave Room Button -->
-            <form method="POST"
-                action="{% url 'leave_room' room.id %}"
-                class="mb-3">
+            <div class="d-flex gap-2 mb-3">
+                <span class="badge bg-success">
+                    ✔ Joined
+                </span>
 
-                {% csrf_token %}
-
-                <button class="btn btn-danger">
-                    🚪 Leave Room
-                </button>
-
-            </form>
+                <form method="POST"
+                    action="{% url 'leave_room' room.id %}">
+                    {% csrf_token %}
+                    <button class="btn btn-danger btn-sm">
+                        🚪 Leave Room
+                    </button>
+                </form>
+            </div>
              <!-- Chat Card -->
             <div class="card shadow-sm">
 
