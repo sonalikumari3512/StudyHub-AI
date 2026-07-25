@@ -4,27 +4,206 @@
 
 <div class="container mt-5">
 
-    <div class="card p-4">
+    <!-- Profile Card -->
+    <div class="card shadow-lg border-0 rounded-4 mb-4">
 
-        <h2>My Profile</h2>
+        <div class="card-body text-center py-5">
 
-        <hr>
+            <div class="mb-3">
 
-        <p><strong>Username:</strong> {{ request.user.username }}</p>
+                <img src="https://ui-avatars.com/api/?name={{ request.user.username }}&background=0D6EFD&color=fff&size=150"
+                     class="rounded-circle shadow"
+                     width="130"
+                     height="130">
 
-        <p><strong>College:</strong> {{ profile.college }}</p>
+            </div>
 
-        <p><strong>Year:</strong> {{ profile.year }}</p>
+            <h2 class="fw-bold">
+                👤 {{ request.user.username }}
+            </h2>
 
-        <p><strong>Branch:</strong> {{ profile.branch }}</p>
-        <a
-            href="{% url 'edit_profile' %}"
-            class="btn btn-success mt-3"
-        >
-            Edit Profile
-        </a>
+            <p class="text-muted">
+                {{ request.user.email }}
+            </p>
 
-       
+            <hr>
+
+            <div class="row mt-4">
+
+                <div class="col-md-4">
+
+                    <h5 class="text-primary">
+                        📚 Created Rooms
+                    </h5>
+
+                    <h2>
+                        {{ created_rooms.count }}
+                    </h2>
+
+                </div>
+
+                <div class="col-md-4">
+
+                    <h5 class="text-success">
+                        🤝 Joined Rooms
+                    </h5>
+
+                    <h2>
+                        {{ joined_rooms.count }}
+                    </h2>
+
+                </div>
+
+                <div class="col-md-4">
+
+                    <h5 class="text-warning">
+                        🎓 College
+                    </h5>
+
+                    <p class="fw-bold">
+                        {{ profile.college }}
+                    </p>
+
+                </div>
+
+            </div>
+
+            <div class="mt-4">
+
+                <a href="{% url 'edit_profile' %}"
+                   class="btn btn-success rounded-pill px-4">
+
+                    ✏️ Edit Profile
+
+                </a>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Personal Information -->
+
+    <div class="card shadow-sm border-0 rounded-4 mb-4">
+
+        <div class="card-header bg-primary text-white fw-bold">
+
+            📋 Personal Information
+
+        </div>
+
+        <div class="card-body">
+
+            <div class="row">
+
+                <div class="col-md-6">
+
+                    <p>
+                        <strong>👤 Username:</strong><br>
+                        {{ request.user.username }}
+                    </p>
+
+                    <p>
+                        <strong>📧 Email:</strong><br>
+                        {{ request.user.email }}
+                    </p>
+
+                </div>
+
+                <div class="col-md-6">
+
+                    <p>
+                        <strong>🎓 College:</strong><br>
+                        {{ profile.college }}
+                    </p>
+
+                    <p>
+                        <strong>📖 Branch:</strong><br>
+                        {{ profile.branch }}
+                    </p>
+
+                    <p>
+                        <strong>📅 Year:</strong><br>
+                        {{ profile.year }}
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Created Rooms -->
+
+    <div class="card shadow-sm border-0 rounded-4 mb-4">
+
+        <div class="card-header bg-primary text-white fw-bold">
+
+            📚 My Created Rooms
+
+        </div>
+
+        <div class="list-group list-group-flush">
+
+            {% for room in created_rooms %}
+
+            <a href="{% url 'room_detail' room.id %}"
+               class="list-group-item list-group-item-action">
+
+                📖 {{ room.name }}
+
+            </a>
+
+            {% empty %}
+
+            <div class="list-group-item text-muted">
+
+                You haven't created any rooms yet.
+
+            </div>
+
+            {% endfor %}
+
+        </div>
+
+    </div>
+
+    <!-- Joined Rooms -->
+
+    <div class="card shadow-sm border-0 rounded-4">
+
+        <div class="card-header bg-success text-white fw-bold">
+
+            🤝 Joined Rooms
+
+        </div>
+
+        <div class="list-group list-group-flush">
+
+            {% for room in joined_rooms %}
+
+            <a href="{% url 'room_detail' room.id %}"
+               class="list-group-item list-group-item-action">
+
+                📖 {{ room.name }}
+
+            </a>
+
+            {% empty %}
+
+            <div class="list-group-item text-muted">
+
+                You haven't joined any rooms yet.
+
+            </div>
+
+            {% endfor %}
+
+        </div>
+
     </div>
 
 </div>

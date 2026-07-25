@@ -4,6 +4,7 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from .forms import RegisterUserForm, ProfileForm
+from rooms.models import Room
 
 def home(request):
     return render(request, "users/home.html")
@@ -42,14 +43,23 @@ def login_user(request):
 
 @login_required
 def profile(request):
+
     profile = UserProfile.objects.get(user=request.user)
+
+    created_rooms = Room.objects.filter(host=request.user)
+
+    joined_rooms = request.user.joined_rooms.all()
+
+    context = {
+        "profile": profile,
+        "created_rooms": created_rooms,
+        "joined_rooms": joined_rooms,
+    }
 
     return render(
         request,
         "users/profile.html",
-        {
-            "profile": profile
-        }
+        context,
     )
 
 

@@ -8,13 +8,13 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
 
         <div>
-            <h1 class="fw-bold">📚 Study Rooms</h1>
-            <p class="text-muted">
+            <h1 class="fw-bold display-5">📚 Study Rooms</h1>
+            <p class="text-muted fs-5">
                 Join a room and start learning together! 🚀
             </p>
         </div>
 
-        <a href="{% url 'create_room' %}" class="btn btn-success btn-lg">
+        <a href="{% url 'create_room' %}" class="btn btn-success btn-lg rounded-pill px-4">
             ➕ Create Room
         </a>
 
@@ -23,17 +23,17 @@
     <!-- Search -->
     <form method="GET" class="mb-4">
 
-        <div class="input-group">
+        <div class="input-group input-group-lg">
 
             <input
                 type="text"
                 name="q"
                 class="form-control"
-                placeholder="Search rooms..."
+                placeholder="🔍 Search rooms..."
                 value="{{ query }}">
 
-            <button class="btn btn-primary">
-                🔍 Search
+            <button class="btn btn-primary px-4">
+                Search
             </button>
 
         </div>
@@ -45,23 +45,25 @@
         <!-- LEFT SIDEBAR -->
         <div class="col-lg-3">
 
-            <div class="card shadow-sm">
+            <div class="card shadow-sm border-0 rounded-4">
 
-                <div class="card-header bg-dark text-white">
+                <div class="card-header bg-dark text-white fw-bold rounded-top-4">
                     📂 Topics
                 </div>
 
                 <div class="list-group list-group-flush">
 
                     <a href="{% url 'rooms' %}"
-                       class="list-group-item list-group-item-action">
+                       class="list-group-item list-group-item-action {% if not request.GET.topic %}active{% endif %}">
+
                         🌍 All Topics
+
                     </a>
 
                     {% for topic in topics %}
 
                     <a href="{% url 'rooms' %}?topic={{ topic.id }}"
-                       class="list-group-item list-group-item-action">
+                       class="list-group-item list-group-item-action {% if request.GET.topic == topic.id|stringformat:'s' %}active{% endif %}">
 
                         {{ topic.name }}
 
@@ -82,25 +84,25 @@
 
                 {% for room in rooms %}
 
-                <div class="col-md-6 mb-4">
+                <div class="col-12 mb-4">
 
                     <div class="card shadow border-0 rounded-4 h-100">
 
                         <div class="card-body">
 
-                            <span class="badge bg-primary fs-6 mb-2">
+                            <span class="badge bg-primary rounded-pill px-3 py-2 fs-6 mb-3">
 
                                 {{ room.topic.name|default:"No Topic" }}
 
                             </span>
 
-                            <h4 class="text-primary">
+                            <h3 class="fw-bold text-primary">
 
                                 📖 {{ room.name }}
 
-                            </h4>
+                            </h3>
 
-                            <p class="text-muted">
+                            <p class="text-muted mb-4">
 
                                 {{ room.description }}
 
@@ -108,13 +110,23 @@
 
                             <hr>
 
-                            <p>
+                            <div class="d-flex justify-content-between align-items-center">
 
-                                👩‍🏫 <strong>Host:</strong>
+                                <div>
 
-                                {{ room.host.username }}
+                                    👩‍🏫 <strong>Host:</strong>
 
-                            </p>
+                                    {{ room.host.username }}
+
+                                </div>
+
+                                <div class="text-muted">
+
+                                    👥 {{ room.members.count }} Members
+
+                                </div>
+
+                            </div>
 
                         </div>
 
@@ -123,7 +135,7 @@
                             <a href="{% url 'room_detail' room.id %}"
                                class="btn btn-primary w-100 rounded-pill">
 
-                                👀 View Room
+                                ➡️ Enter Room
 
                             </a>
 
@@ -135,18 +147,17 @@
 
                 {% empty %}
 
-                <div class="col-12 text-center mt-5">
+                <div class="col-12 text-center py-5">
 
-                    <h3>😢 No Study Rooms Found</h3>
+                    <h2>😢 No Study Rooms Found</h2>
 
                     <p class="text-muted">
 
-                        Try another search or create a room.
+                        Try another search or create your own study room.
 
                     </p>
 
-                    <a href="{% url 'create_room' %}"
-                       class="btn btn-success">
+                    <a href="{% url 'create_room' %}" class="btn btn-success btn-lg rounded-pill">
 
                         ➕ Create First Room
 

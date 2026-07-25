@@ -197,3 +197,5 @@ def leave_room(request, pk):
         room.members.remove(request.user)
 
     return redirect("rooms")
+
+
