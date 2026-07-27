@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponseForbidden
+from django.http import HttpResponseForbidden,JsonResponse
 
 from .models import Room,Message,Topic
 from .forms import RoomForm, MessageForm
@@ -75,30 +75,7 @@ def room_detail(request, pk):
 
     is_member = room.members.filter(id=request.user.id).exists()
 
-    if request.method == "POST":
-
-        if not is_member:
-            return HttpResponseForbidden(
-                "Join the room first."
-            )
-
-        form = MessageForm(request.POST)
-
-        if form.is_valid():
-
-            message = form.save(commit=False)
-
-            message.room = room
-
-            message.user = request.user
-
-            message.save()
-
-            return redirect("room_detail", pk=pk)
-
-    else:
-
-        form = MessageForm()
+    form = MessageForm()
 
     return render(
         request,
@@ -199,3 +176,19 @@ def leave_room(request, pk):
     return redirect("rooms")
 
 
+
+def room_messages(request, room_id):
+
+    room = get_object_or_404(Room, id=room_id)
+
+    messages = []
+
+    for message in room.messages.all():
+
+        messages.append({
+            "user": message.user.username,
+            "body": message.body,
+            "time": message.created_at.strftime("%d %b %Y, %I:%M %p"),
+        })
+
+    return JsonResponse(messages, safe=False)
