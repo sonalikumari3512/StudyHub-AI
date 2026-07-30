@@ -17,12 +17,14 @@ class MessageForm(forms.ModelForm):
     class Meta:
         model = Message
         fields = ["body"]
+
         widgets = {
-            "body": forms.TextInput(
+            "body": forms.Textarea(
                 attrs={
-                    "placeholder": "Type your message...",
-                    "class": "form-control"
+                    "id": "message-input",
+                    "class": "form-control",
+                    "rows": 2,
+                    "placeholder": "Type your message..."
                 }
             )
         }
-

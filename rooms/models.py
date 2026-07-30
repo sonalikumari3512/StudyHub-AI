@@ -51,9 +51,71 @@ class Message(models.Model):
     )
 
     body = models.TextField()
+    delivered = models.BooleanField(default=False)
 
+    read = models.BooleanField(default=False)
+
+    read_at = models.DateTimeField(
+        null=True,
+        blank=True
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.body[:50]
+
+# ==========================================
+# NOTIFICATION MODEL
+# ==========================================
+
+class Notification(models.Model):
+
+    receiver = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="notifications"
+    )
+
+
+    sender = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="sent_notifications"
+    )
+
+
+    room = models.ForeignKey(
+        Room,
+        on_delete=models.CASCADE,
+        related_name="notifications"
+    )
+
+
+    message = models.ForeignKey(
+        Message,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="notifications"
+    )
+
+
+    text = models.CharField(
+        max_length=255
+    )
+
+
+    is_read = models.BooleanField(
+        default=False
+    )
+
+
+    created_at = models.DateTimeField(
+        auto_now_add=True
+    )
+
+
+    def __str__(self):
+
+        return f"{self.sender.username} -> {self.receiver.username}"

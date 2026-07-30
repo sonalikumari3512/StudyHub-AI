@@ -5,6 +5,7 @@ from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from .forms import RegisterUserForm, ProfileForm
 from rooms.models import Room
+from django.utils import timezone
 
 def home(request):
     return render(request, "users/home.html")
@@ -25,20 +26,34 @@ def register(request):
     return render(request, "users/register.html", {"form": form})
 
 
+
+
+
 def login_user(request):
     if request.method == "POST":
+
         form = AuthenticationForm(request, data=request.POST)
 
         if form.is_valid():
+
             user = form.get_user()
+
             login(request, user)
+
+
             return redirect("/")
 
     else:
+
         form = AuthenticationForm()
 
-    return render(request, "users/login.html", {"form": form})
-
+    return render(
+        request,
+        "users/login.html",
+        {
+            "form": form
+        }
+    )
 
 
 @login_required
@@ -95,7 +110,9 @@ def edit_profile(request):
 
 
 def logout_user(request):
+
     logout(request)
+
     return redirect("/")
 
 

@@ -1,9 +1,13 @@
 import json
 
-from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
+from channels.db import database_sync_to_async
 
-from .models import Message, Room
+from django.contrib.auth.models import User
+from django.utils import timezone
+
+from .models import Room, Message
+from users.models import UserProfile
 
 
 class ChatConsumer(AsyncWebsocketConsumer):
@@ -14,13 +18,16 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
     async def connect(self):
 
-        self.room_id = self.scope["url_route"]["kwargs"]["room_id"]
-        self.room_group_name = f"room_{self.room_id}"
         self.user = self.scope["user"]
 
-        # Prevent anonymous users
-        if self.user.is_anonymous:
+        self.room_id = self.scope["url_route"]["kwargs"]["room_id"]
+
+        self.room_group_name = f"room_{self.room_id}"
+
+        if not self.user.is_authenticated:
+
             await self.close()
+
             return
 
         await self.channel_layer.group_add(
@@ -30,270 +37,553 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
         await self.accept()
 
+        await self.set_online(True)
+
+        count = await self.get_online_count()
+
+        await self.channel_layer.group_send(
+            self.room_group_name,
+            {
+                "type": "online_count",
+                "count": count
+            }
+        )
+
+        await self.channel_layer.group_send(
+            self.room_group_name,
+            {
+                "type": "presence",
+                "user_id": self.user.id,
+                "username": self.user.username,
+                "online": True,
+                "last_seen": ""
+            }
+        )
+
     # ==========================================
     # DISCONNECT
     # ==========================================
 
     async def disconnect(self, close_code):
 
+        await self.set_online(False)
+
         await self.channel_layer.group_discard(
             self.room_group_name,
             self.channel_name
         )
-        # ==========================================
-    # RECEIVE DATA
+
+        last_seen = timezone.localtime().strftime("%d %b %I:%M %p")
+
+        count = await self.get_online_count()
+
+        await self.channel_layer.group_send(
+            self.room_group_name,
+            {
+                "type": "online_count",
+                "count": count
+            }
+        )
+
+        await self.channel_layer.group_send(
+            self.room_group_name,
+            {
+                "type": "presence",
+                "user_id": self.user.id,
+                "username": self.user.username,
+                "online": False,
+                "last_seen": last_seen
+            }
+        )
+
+    # ==========================================
+    # RECEIVE
     # ==========================================
 
     async def receive(self, text_data):
 
         data = json.loads(text_data)
 
-        event_type = data.get("type", "message")
+        event = data.get("type")
 
-        # -----------------------------
-        # NEW MESSAGE
-        # -----------------------------
+        if event == "message":
 
-        if event_type == "message":
+            await self.create_message(data)
 
-            body = data.get("message", "").strip()
+        elif event == "edit":
 
-            if not body:
-                return
+            await self.edit_message_event(data)
 
-            message = await self.create_message(body)
+        elif event == "delete":
 
-            await self.channel_layer.group_send(
-                self.room_group_name,
-                {
-                    "type": "chat_message",
-                    "id": message.id,
-                    "message": message.body,
-                    "username": message.user.username,
-                    "user_id": message.user.id,
-                    "time": message.created_at.strftime("%d %b %Y, %I:%M %p"),
-                }
-            )
+            await self.delete_message_event(data)
 
-        # -----------------------------
-        # EDIT MESSAGE
-        # -----------------------------
-
-        elif event_type == "edit":
-
-            message = await self.update_message(
-                data.get("message_id"),
-                data.get("message", "").strip(),
-            )
-
-            if message:
-
-                await self.channel_layer.group_send(
-                    self.room_group_name,
-                    {
-                        "type": "message_edited",
-                        "id": message.id,
-                        "message": message.body,
-                    }
-                )
-
-        # -----------------------------
-        # DELETE MESSAGE
-        # -----------------------------
-
-        elif event_type == "delete":
-
-            deleted = await self.remove_message(
-                data.get("message_id")
-            )
-
-            if deleted:
-
-                await self.channel_layer.group_send(
-                    self.room_group_name,
-                    {
-                        "type": "message_deleted",
-                        "id": deleted,
-                    }
-                )
-
-        # -----------------------------
-        # USER TYPING
-        # -----------------------------
-
-        elif event_type == "typing":
+        elif event == "typing":
 
             await self.channel_layer.group_send(
+
                 self.room_group_name,
+
                 {
                     "type": "typing_status",
                     "username": self.user.username,
-                    "typing": True,
+                    "typing": data.get("typing", False)
                 }
+
             )
 
-        # -----------------------------
-        # STOP TYPING
-        # -----------------------------
+        elif event == "delivered":
 
-        elif event_type == "stop_typing":
+            await self.mark_delivered(data)
 
-            await self.channel_layer.group_send(
-                self.room_group_name,
-                {
-                    "type": "typing_status",
-                    "username": self.user.username,
-                    "typing": False,
-                }
-            )
+        elif event == "read":
 
+            await self.mark_read(data)
+        # ==========================================
+    # CREATE MESSAGE
+    # ==========================================
+
+    async def create_message(self, data):
+
+        text = data.get("message", "").strip()
+
+        if not text:
+            return
+
+        message = await self.save_message(text)
+
+        await self.channel_layer.group_send(
+
+            self.room_group_name,
+
+            {
+                "type": "chat_message",
+
+                "id": message.id,
+
+                "message": message.body,
+
+                "username": self.user.username,
+
+                "user_id": self.user.id,
+
+                "time": timezone.localtime(
+                    message.created_at
+                ).strftime("%d %b %Y, %I:%M %p"),
+
+                "delivered": False,
+
+                "read": False,
+            },
+        )
+
+        await self.send_notifications(message)
 
 
     # ==========================================
-    # SEND NEW MESSAGE
+    # EDIT MESSAGE
+    # ==========================================
+
+    async def edit_message_event(self, data):
+
+        msg = await self.update_message(
+
+            data.get("message_id"),
+
+            data.get("message", "")
+
+        )
+
+        if not msg:
+            return
+
+        await self.channel_layer.group_send(
+
+            self.room_group_name,
+
+            {
+                "type": "edited",
+
+                "id": msg.id,
+
+                "message": msg.body,
+            },
+        )
+
+
+    # ==========================================
+    # DELETE MESSAGE
+    # ==========================================
+
+    async def delete_message_event(self, data):
+
+        deleted = await self.delete_message(
+
+            data.get("message_id")
+        )
+
+        if not deleted:
+            return
+
+        await self.channel_layer.group_send(
+
+            self.room_group_name,
+
+            {
+                "type": "deleted",
+
+                "id": data.get("message_id"),
+            },
+        )
+
+
+    # ==========================================
+    # SEND MESSAGE TO ALL
     # ==========================================
 
     async def chat_message(self, event):
 
         await self.send(
+
             text_data=json.dumps(
+
                 {
                     "type": "message",
-                    "id": event["id"],
-                    "message": event["message"],
-                    "username": event["username"],
-                    "user_id": event["user_id"],
-                    "time": event["time"],
-                }
-            )
-        )
 
+                    "id": event["id"],
+
+                    "message": event["message"],
+
+                    "username": event["username"],
+
+                    "user_id": event["user_id"],
+
+                    "time": event["time"],
+
+                    "delivered": event["delivered"],
+
+                    "read": event["read"],
+                }
+
+            )
+
+        )
 
 
     # ==========================================
     # MESSAGE EDITED
     # ==========================================
 
-    async def message_edited(self, event):
+    async def edited(self, event):
 
         await self.send(
+
             text_data=json.dumps(
+
                 {
                     "type": "edited",
+
                     "id": event["id"],
+
                     "message": event["message"],
                 }
-            )
-        )
 
+            )
+
+        )
 
 
     # ==========================================
     # MESSAGE DELETED
     # ==========================================
 
-    async def message_deleted(self, event):
+    async def deleted(self, event):
 
         await self.send(
+
             text_data=json.dumps(
+
                 {
                     "type": "deleted",
+
                     "id": event["id"],
                 }
+
             )
+
         )
 
 
-
     # ==========================================
-    # TYPING STATUS
+    # TYPING
     # ==========================================
 
     async def typing_status(self, event):
 
         await self.send(
+
             text_data=json.dumps(
+
                 {
                     "type": "typing",
+
                     "username": event["username"],
+
                     "typing": event["typing"],
                 }
+
             )
+
+        )
+
+
+    # ==========================================
+    # USER PRESENCE
+    # ==========================================
+
+    async def presence(self, event):
+
+        await self.send(
+
+            text_data=json.dumps(
+
+                {
+                    "type": "presence",
+
+                    "user_id": event["user_id"],
+
+                    "username": event["username"],
+
+                    "online": event["online"],
+
+                    "last_seen": event["last_seen"],
+                }
+
+            )
+
+        )
+
+
+    # ==========================================
+    # ONLINE COUNT
+    # ==========================================
+
+    async def online_count(self, event):
+
+        await self.send(
+
+            text_data=json.dumps(
+
+                {
+                    "type": "online_count",
+
+                    "count": event["count"],
+                }
+
+            )
+
         )
         # ==========================================
-    # DATABASE METHODS
+    # DATABASE HELPERS
     # ==========================================
 
     @database_sync_to_async
-    def create_message(self, body):
+    def save_message(self, text):
 
         room = Room.objects.get(id=self.room_id)
 
         return Message.objects.create(
+
             room=room,
             user=self.user,
-            body=body
+            body=text
+
         )
 
 
+    @database_sync_to_async
+    def update_message(self, message_id, text):
+        try:
+            # Cast message_id to int to ensure database query matches
+            msg = Message.objects.get(
+                id=int(message_id),
+                user=self.user
+            )
+            msg.body = text
+            msg.save()
+            return msg
+        except (Message.DoesNotExist, ValueError, TypeError):
+            return None
 
     @database_sync_to_async
-    def update_message(self, message_id, new_body):
-
-        if not new_body:
-            return None
+    def delete_message(self, message_id):
 
         try:
 
-            message = Message.objects.select_related(
-                "user",
-                "room"
-            ).get(
+            msg = Message.objects.get(
+
                 id=message_id,
-                room_id=self.room_id
+                user=self.user
+
             )
+
+            msg.delete()
+
+            return True
 
         except Message.DoesNotExist:
 
-            return None
+            return False
 
 
-        # Only the owner can edit
-        if message.user_id != self.user.id:
+    # ==========================================
+    # DELIVERED
+    # ==========================================
 
-            return None
+    async def mark_delivered(self, data):
+
+        await self.channel_layer.group_send(
+
+            self.room_group_name,
+
+            {
+
+                "type": "delivered_status",
+
+                "id": data["message_id"]
+
+            }
+
+        )
 
 
-        message.body = new_body
-        message.save(update_fields=["body"])
+    async def delivered_status(self, event):
 
-        return message
+        await self.send(
 
+            text_data=json.dumps(
+
+                {
+
+                    "type": "delivered",
+
+                    "id": event["id"]
+
+                }
+
+            )
+
+        )
+
+
+    # ==========================================
+    # READ
+    # ==========================================
+
+    async def mark_read(self, data):
+
+        await self.channel_layer.group_send(
+
+            self.room_group_name,
+
+            {
+
+                "type": "read_status",
+
+                "id": data["message_id"]
+
+            }
+
+        )
+
+
+    async def read_status(self, event):
+
+        await self.send(
+
+            text_data=json.dumps(
+
+                {
+
+                    "type": "read",
+
+                    "id": event["id"]
+
+                }
+
+            )
+
+        )
+
+
+    # ==========================================
+    # USER ONLINE/OFFLINE
+    # ==========================================
+
+    @database_sync_to_async
+    def set_online(self, online):
+
+        profile, created = UserProfile.objects.get_or_create(
+
+            user=self.user
+
+        )
+
+        profile.is_online = online
+
+        profile.last_seen = timezone.now()
+
+        profile.save()
 
 
     @database_sync_to_async
-    def remove_message(self, message_id):
+    def get_online_count(self):
 
-        try:
+        room = Room.objects.get(id=self.room_id)
 
-            message = Message.objects.get(
-                id=message_id,
-                room_id=self.room_id
+        return room.members.filter(
+
+            userprofile__is_online=True
+
+        ).count()
+
+
+    # ==========================================
+    # SEND NOTIFICATIONS
+    # ==========================================
+
+    async def send_notifications(self, message):
+
+        room = await database_sync_to_async(
+
+            lambda: Room.objects.get(id=self.room_id)
+
+        )()
+
+        members = await database_sync_to_async(
+
+            lambda: list(room.members.exclude(id=self.user.id))
+
+        )()
+
+        for member in members:
+
+            await self.channel_layer.group_send(
+
+                f"user_{member.id}_notifications",
+
+                {
+
+                    "type": "send_notification",
+
+                    "username": self.user.username,
+
+                    "title": room.name,
+
+                    "message": message.body,
+
+                    "room_id": self.room_id,
+
+                }
+
             )
-
-        except Message.DoesNotExist:
-
-            return None
-
-
-        # Only the owner can delete
-        if message.user_id != self.user.id:
-
-            return None
-
-
-        deleted_id = message.id
-
-        message.delete()
-
-        return deleted_id

@@ -1,0 +1,151 @@
+/* ===========================
+   CHAT BOX
+=========================== */
+
+.chat-box{
+    height:500px;
+    overflow-y:auto;
+    scroll-behavior:smooth;
+    background:#fafafa;
+}
+
+
+/* ===========================
+   MESSAGE ROW
+=========================== */
+
+.message-row{
+    display:flex;
+    margin-bottom:15px;
+}
+
+.my-row{
+    justify-content:flex-end;
+}
+
+.other-row{
+    justify-content:flex-start;
+}
+
+
+/* ===========================
+   MESSAGE BUBBLE
+=========================== */
+
+.message-bubble{
+    max-width:70%;
+    padding:12px;
+    border-radius:12px;
+    word-break:break-word;
+}
+
+.my-message{
+    background:#0d6efd;
+    color:white;
+}
+
+.other-message{
+    background:#f1f1f1;
+}
+
+
+/* ===========================
+   AVATAR
+=========================== */
+
+.avatar{
+    width:35px;
+    height:35px;
+    border-radius:50%;
+    background:#0d6efd;
+    color:white;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:bold;
+}
+
+
+/* ===========================
+   MESSAGE
+=========================== */
+
+.message-text{
+    margin-top:8px;
+    white-space:pre-wrap;
+}
+ .edit-input {
+    color: black !important;
+    background: white !important;
+}
+.receipt{
+    font-size:12px;
+    color:gray;
+    margin-top:8px;
+    text-align:right;
+}
+
+
+/* ===========================
+   SEARCH
+=========================== */
+
+.highlight{
+    background:yellow;
+    color:black;
+    padding:2px;
+}
+
+
+/* ===========================
+   EMOJI BOX
+=========================== */
+
+#emoji-box{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+}
+
+.emoji{
+    cursor:pointer;
+}
+
+
+/* ===========================
+   TYPING
+=========================== */
+
+#typing-status{
+    min-height:20px;
+    font-size:13px;
+    color:#0d6efd;
+    font-weight:500;
+}
+
+
+/* ===========================
+   MEMBERS
+=========================== */
+
+.list-group-item small{
+    font-size:11px;
+}
+
+
+/* ===========================
+   INPUT
+=========================== */
+
+#id_body{
+    resize:none;
+}
+
+
+/* ===========================
+   EMPTY CHAT
+=========================== */
+
+#empty-chat{
+    color:gray;
+}

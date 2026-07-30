@@ -10,114 +10,582 @@
 
     <title>StudyHub AI</title>
 
+
     <!-- Bootstrap CSS -->
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
 
+
+    <style>
+
+        .notification-wrapper {
+            position: relative;
+        }
+
+
+        #notification-box {
+
+            position: absolute;
+
+            right: 0;
+
+            top: 45px;
+
+            width: 320px;
+
+            background: white;
+
+            color: black;
+
+            border-radius: 10px;
+
+            box-shadow: 0px 5px 20px rgba(0,0,0,0.2);
+
+            display: none;
+
+            z-index: 9999;
+
+        }
+
+
+        .notification-item {
+
+            padding: 12px;
+
+            border-bottom: 1px solid #ddd;
+
+        }
+
+
+        .notification-item:last-child {
+
+            border-bottom: none;
+
+        }
+
+
+        #notification-count {
+
+            font-size: 11px;
+
+        }
+
+
+    </style>
+
+
 </head>
+
 
 <body>
 
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-    <div class="container">
 
-        <a class="navbar-brand" href="#">
-            StudyHub AI
-        </a>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
 
-        <button class="navbar-toggler"
-                type="button"
-                data-bs-toggle="collapse"
-                data-bs-target="#navbarNav">
+<div class="container">
 
-            <span class="navbar-toggler-icon"></span>
 
-        </button>
+    <a class="navbar-brand" href="#">
 
-        <div class="collapse navbar-collapse"
-             id="navbarNav">
+        StudyHub AI
 
-            <ul class="navbar-nav ms-auto">
+    </a>
 
-                <li class="nav-item">
-                    <a class="nav-link active" href="#">
-                        Home
-                    </a>
-                </li>
 
-                <li class="nav-item">
-                    <a class="nav-link" href="#">
-                        Rooms
-                    </a>
-                </li>
 
-                {% if user.is_authenticated %}
+    <button class="navbar-toggler"
+            type="button"
+            data-bs-toggle="collapse"
+            data-bs-target="#navbarNav">
 
-                <li class="nav-item">
-                    <a class="nav-link" href="{% url 'dashboard' %}">
-                        Dashboard
-                    </a>
-                </li>
 
-                <li class="nav-item">
-                    <a class="nav-link">
-                        Welcome {{ user.username }} 👋
-                    </a>
-                </li>
+        <span class="navbar-toggler-icon"></span>
 
-                <li class="nav-item">
-                    <a class="nav-link" href="{% url 'profile' %}">
-                        My Profile
-                    </a>
-                </li>
 
-                <li class="nav-item">
-                    <a class="nav-link" href="{% url 'logout' %}">
-                        Logout
-                    </a>
-                </li>
+    </button>
 
-                {% else %}
 
-                <li class="nav-item">
-                    <a class="nav-link" href="{% url 'login' %}">
-                        Login
-                    </a>
-                </li>
 
-                <li class="nav-item">
-                    <a class="nav-link" href="{% url 'register' %}">
-                        Register
-                    </a>
-                </li>
+    <div class="collapse navbar-collapse"
+         id="navbarNav">
 
-                {% endif %}
 
-            </ul>
+        <ul class="navbar-nav ms-auto">
 
-         </div>
 
-     </div>
 
-     </nav>
-    <div class="container mt-3">
+            <li class="nav-item">
 
-    {% for message in messages %}
+                <a class="nav-link active" href="#">
 
-        <div class="alert alert-success">
+                    Home
 
-            {{ message }}
+                </a>
 
-        </div>
+            </li>
 
-    {% endfor %}
 
-   </div>
-    {% block content %}
 
-    {% endblock %}
+            <li class="nav-item">
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
+                <a class="nav-link" href="#">
+
+                    Rooms
+
+                </a>
+
+            </li>
+
+
+
+
+            {% if user.is_authenticated %}
+
+
+
+            <!-- ============================ -->
+            <!-- NOTIFICATION BELL -->
+            <!-- ============================ -->
+
+
+            <li class="nav-item notification-wrapper ms-3">
+
+
+                <a class="nav-link"
+                   href="#"
+                   id="notification-button">
+
+
+                    🔔
+
+
+                    <span
+                    id="notification-count"
+                    class="badge bg-danger d-none">
+
+
+                        0
+
+
+                    </span>
+
+
+                </a>
+
+
+
+
+                <div id="notification-box">
+
+
+
+                    <div class="p-3 fw-bold">
+
+                        Notifications
+
+                    </div>
+
+
+
+                    <div id="notification-list">
+
+
+                        <div class="notification-item text-muted">
+
+                            No notifications
+
+                        </div>
+
+
+                    </div>
+
+
+
+                </div>
+
+
+
+            </li>
+
+
+
+
+
+            <li class="nav-item">
+
+                <a class="nav-link"
+                   href="{% url 'dashboard' %}">
+
+
+                    Dashboard
+
+
+                </a>
+
+
+            </li>
+
+
+
+
+
+            <li class="nav-item">
+
+
+                <a class="nav-link">
+
+
+                    Welcome {{ user.username }} 👋
+
+
+                </a>
+
+
+            </li>
+
+
+
+
+
+            <li class="nav-item">
+
+
+                <a class="nav-link"
+                   href="{% url 'profile' %}">
+
+
+                    My Profile
+
+
+                </a>
+
+
+            </li>
+
+
+
+
+
+            <li class="nav-item">
+
+
+                <a class="nav-link"
+                   href="{% url 'logout' %}">
+
+
+                    Logout
+
+
+                </a>
+
+
+            </li>
+
+
+
+
+            {% else %}
+
+
+
+
+
+            <li class="nav-item">
+
+
+                <a class="nav-link"
+                   href="{% url 'login' %}">
+
+
+                    Login
+
+
+                </a>
+
+
+            </li>
+
+
+
+
+
+            <li class="nav-item">
+
+
+                <a class="nav-link"
+                   href="{% url 'register' %}">
+
+
+                    Register
+
+
+                </a>
+
+
+            </li>
+
+
+
+
+
+            {% endif %}
+
+
+
+        </ul>
+
+
+    </div>
+
+
+</div>
+
+
+</nav>
+
+
+
+
+<div class="container mt-3">
+
+
+{% for message in messages %}
+
+
+    <div class="alert alert-success">
+
+
+        {{ message }}
+
+
+    </div>
+
+
+{% endfor %}
+
+
+</div>
+
+
+
+
+{% block content %}
+
+{% endblock %}
+
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
+
+
+
+
+{% if user.is_authenticated %}
+
+
+<script>
+
+
+// =====================================
+// NOTIFICATION SOCKET
+// =====================================
+
+
+const notificationProtocol =
+window.location.protocol === "https:"
+? "wss://"
+: "ws://";
+
+const notificationSocket = new WebSocket(
+
+    `${notificationProtocol}${window.location.host}/ws/notifications/`
+
+);
+
+
+
+let notificationCount = 0;
+
+
+
+
+
+notificationSocket.onmessage = function(e){
+
+
+    const data = JSON.parse(e.data);
+
+
+
+    if(data.type === "notification"){
+
+
+        addNotification(data);
+
+
+        increaseNotificationCount();
+
+
+    }
+
+
+};
+
+
+
+
+
+
+function addNotification(data){
+
+
+    const list = document.getElementById(
+        "notification-list"
+    );
+
+
+
+    if(
+        list.innerText.includes(
+            "No notifications"
+        )
+    ){
+
+        list.innerHTML = "";
+
+    }
+
+
+
+    const item = document.createElement(
+        "div"
+    );
+
+
+    item.className =
+    "notification-item";
+
+
+
+    item.innerHTML = `
+
+
+        <b>${data.username}</b>
+
+        <br>
+
+        ${data.message}
+
+
+    `;
+
+
+
+    list.prepend(item);
+
+
+
+}
+
+
+
+
+
+
+function increaseNotificationCount(){
+
+
+    notificationCount++;
+
+
+
+    const badge =
+    document.getElementById(
+        "notification-count"
+    );
+
+
+
+    badge.innerHTML =
+    notificationCount;
+
+
+
+    badge.classList.remove(
+        "d-none"
+    );
+
+
+}
+
+
+
+
+
+
+
+document
+.getElementById(
+    "notification-button"
+)
+.onclick = function(e){
+
+
+    e.preventDefault();
+
+
+
+    const box =
+    document.getElementById(
+        "notification-box"
+    );
+
+
+
+    if(
+        box.style.display === "block"
+    ){
+
+        box.style.display = "none";
+
+
+    }
+
+    else{
+
+
+        box.style.display = "block";
+
+
+        notificationCount = 0;
+
+
+
+        document
+        .getElementById(
+            "notification-count"
+        )
+        .classList.add(
+            "d-none"
+        );
+
+
+    }
+
+
+};
+
+
+
+</script>
+
+
+{% endif %}
+
+
+
 </body>
 
 </html>
+
