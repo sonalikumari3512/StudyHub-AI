@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container py-5">
+
+    <!-- HEADER -->
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+
+        <div>
+
+            <h2 class="fw-bold">
+                📚 Study Resources
+            </h2>
+
+            <p class="text-muted mb-0">
+                Find useful study materials shared by students.
+            </p>
+
+        </div>
+
+        <a
+            href="{% url 'upload_resource' %}"
+            class="btn btn-primary">
+
+            📤 Upload Resource
+
+        </a>
+
+    </div>
+
+
+    <!-- SEARCH -->
+
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+
+        <div class="card-body">
+
+            <form
+                method="GET"
+                class="row g-2">
+
+                <div class="col-md-7">
+
+                    <input
+                        type="text"
+                        name="search"
+                        value="{{ search }}"
+                        class="form-control"
+                        placeholder="🔍 Search resources...">
+
+                </div>
+
+
+                <div class="col-md-3">
+
+                    <select
+                        name="category"
+                        class="form-select">
+
+                        <option value="">
+                            All Categories
+                        </option>
+
+                        {% for value, label in categories %}
+
+                            <option
+                                value="{{ value }}"
+                                {% if selected_category == value %}
+                                    selected
+                                {% endif %}>
+
+                                {{ label }}
+
+                            </option>
+
+                        {% endfor %}
+
+                    </select>
+
+                </div>
+
+
+                <div class="col-md-2">
+
+                    <button
+                        class="btn btn-dark w-100">
+
+                        🔍 Search
+
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+
+    <!-- RESOURCE CARDS -->
+
+    <div class="row g-4">
+
+        {% for resource in resources %}
+
+            <div class="col-md-6 col-lg-4">
+
+                <div class="card h-100 border-0 shadow-sm rounded-4">
+
+                    <div class="card-body p-4">
+
+                        <div class="d-flex justify-content-between">
+
+                            <span class="badge bg-primary-subtle text-primary">
+
+                                {{ resource.category }}
+
+                            </span>
+
+                            <span class="text-muted small">
+
+                                ⬇ {{ resource.downloads }}
+
+                            </span>
+
+                        </div>
+
+
+                        <h5 class="fw-bold mt-3">
+
+                            {{ resource.title }}
+
+                        </h5>
+
+
+                        <p class="text-muted">
+
+                            {% if resource.description %}
+
+                                {{ resource.description|truncatechars:120 }}
+
+                            {% else %}
+
+                                No description provided.
+
+                            {% endif %}
+
+                        </p>
+
+
+                        <div class="small text-muted mb-3">
+
+                            👤 {{ resource.uploaded_by.username }}
+
+                            <br>
+
+                            🕐 {{ resource.created_at|date:"d M Y, h:i A" }}
+
+                        </div>
+
+
+                        <a
+                            href="{% url 'download_resource' resource.id %}"
+                            class="btn btn-outline-primary w-100">
+
+                            ⬇️ Download
+
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        {% empty %}
+
+            <div class="text-center py-5">
+
+                <div style="font-size: 60px;">
+                    📚
+                </div>
+
+                <h4 class="mt-3">
+                    No resources found
+                </h4>
+
+                <p class="text-muted">
+                    Try another search or upload the first resource.
+                </p>
+
+            </div>
+
+        {% endfor %}
+
+    </div>
+
+</div>
+
+{% endblock %}
