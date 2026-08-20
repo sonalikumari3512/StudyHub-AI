@@ -1,8 +1,11 @@
-from django.shortcuts import render, redirect,get_object_or_404
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
+from django.utils import timezone
+from django.contrib import messages
+from rooms.models import Room
 
-from .forms import ResourceForm
-from .models import Resource
+from .models import Resource, Assignment, Submission
+from .forms import ResourceForm, AssignmentForm, SubmissionForm
 
 @login_required
 def upload_resource(request):
@@ -86,4 +89,138 @@ def download_resource(request, pk):
 
     return redirect(
         resource.file.url
+    )
+
+@login_required
+def assignment_list(request, room_id):
+
+    room = get_object_or_404(Room, id=room_id)
+
+    assignments = room.assignments.all().order_by("-created_at")
+
+    return render(
+        request,
+        "resources/assignment_list.html",
+        {
+            "room": room,
+            "assignments": assignments,
+        }
+    )
+
+@login_required
+def create_assignment(request, room_id):
+
+    room = get_object_or_404(Room, id=room_id)
+
+    if request.user != room.host:
+        messages.error(request, "Only room host can create assignments.")
+        return redirect("assignment_list", room.id)
+
+    if request.method == "POST":
+
+        form = AssignmentForm(
+            request.POST,
+            request.FILES
+        )
+
+        if form.is_valid():
+
+            assignment = form.save(commit=False)
+
+            assignment.room = room
+
+            assignment.created_by = request.user
+
+            assignment.save()
+            messages.success(request, "Assignment created successfully!")
+            return redirect(
+                "assignment_list",
+                room_id = room.id
+            )
+
+    else:
+        form = AssignmentForm()
+
+    return render(
+        request,
+        "resources/create_assignment.html",
+        {
+            "form": form,
+            "room": room,
+        }
+    )
+
+@login_required
+def assignment_detail(request, pk):
+
+    assignment = get_object_or_404(
+        Assignment,
+        id=pk
+    )
+
+    submission = Submission.objects.filter(
+        assignment=assignment,
+        student=request.user
+    ).first()
+
+    return render(
+        request,
+        "resources/assignment_detail.html",
+        {
+            "assignment": assignment,
+            "submission": submission,
+        }
+    )
+
+@login_required
+def submit_assignment(request, pk):
+
+    assignment = get_object_or_404(
+        Assignment,
+        id=pk
+    )
+
+    existing = Submission.objects.filter(
+        assignment=assignment,
+        student=request.user
+    ).first()
+
+    if existing:
+        return redirect("assignment_detail", assignment.id)
+
+    if request.method == "POST":
+
+        form = SubmissionForm(
+            request.POST,
+            request.FILES
+        )
+
+        if form.is_valid():
+
+            submission = form.save(commit=False)
+
+            submission.assignment = assignment
+
+            submission.student = request.user
+
+            if timezone.now() > assignment.due_date:
+                submission.is_late = True
+                submission.status = "Late"
+            else:
+                submission.status = "Submitted"
+
+            submission.save()
+
+            return redirect("assignment_detail", assignment.id)
+
+    else:
+        form = SubmissionForm()
+
+    return render(
+        request,
+        "resources/submit_assignment.html",
+        {
+            "assignment": assignment,
+            "form": form,
+        }
     )

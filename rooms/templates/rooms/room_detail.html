@@ -42,6 +42,22 @@
 
                     </div>
 
+                    <!-- Assignment Button -->
+                    <div class="mb-2">
+                        <a href="{% url 'assignment_list' room.id %}"
+                        class="btn btn-warning btn-sm rounded-pill w-100">
+                            📝 Assignments
+                        </a>
+                    </div>
+
+                    <!-- Upload Resource Button -->
+                    <div class="mb-2">
+                        <a href="{% url 'upload_resource' %}"
+                        class="btn btn-info btn-sm rounded-pill w-100 text-white">
+                            📚 Upload Resource
+                        </a>
+                    </div>
+
                     {% if is_member %}
 
                     <form method="POST"

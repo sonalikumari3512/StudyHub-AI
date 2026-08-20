@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+
+<div class="container py-4">
+
+    <div class="card shadow-lg border-0 rounded-4">
+
+        <div class="card-header bg-warning text-dark rounded-top-4 py-3">
+            <h3 class="mb-0">📝 Create Assignment</h3>
+            <small>Room: {{ room.name }}</small>
+        </div>
+
+        <div class="card-body p-4">
+
+            <form method="POST" enctype="multipart/form-data">
+
+                {% csrf_token %}
+
+                <!-- Assignment Title -->
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Assignment Title</label>
+                    {{ form.title }}
+                </div>
+
+                <!-- Description -->
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Description</label>
+                    {{ form.description }}
+                </div>
+
+                <!-- Upload PDF -->
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Upload Assignment File (PDF/Image)</label>
+                    {{ form.assignment_file }}
+                </div>
+
+                <div class="row">
+
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Due Date</label>
+                        {{ form.due_date }}
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Total Marks</label>
+                        {{ form.total_marks }}
+                    </div>
+
+                </div>
+
+                <div class="d-flex justify-content-between mt-4">
+
+                    <a href="{% url 'assignment_list' room.id %}"
+                       class="btn btn-outline-secondary rounded-pill px-4">
+                        ← Back
+                    </a>
+
+                    <button type="submit"
+                            class="btn btn-warning rounded-pill px-4">
+                        📤 Publish Assignment
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}
