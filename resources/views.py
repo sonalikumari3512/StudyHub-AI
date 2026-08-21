@@ -172,37 +172,38 @@ def assignment_detail(request, pk):
         }
     )
 
+
 @login_required
-def submit_assignment(request, pk):
+def submit_assignment(request, assignment_id):
 
     assignment = get_object_or_404(
         Assignment,
-        id=pk
+        id=assignment_id
     )
 
-    existing = Submission.objects.filter(
+    # Host cannot submit
+    if request.user == assignment.created_by:
+        return redirect("assignment_detail", pk=assignment.id)
+
+    # Prevent duplicate submission
+    if Submission.objects.filter(
         assignment=assignment,
         student=request.user
-    ).first()
-
-    if existing:
-        return redirect("assignment_detail", assignment.id)
+    ).exists():
+        return redirect("assignment_detail", pk=assignment.id)
 
     if request.method == "POST":
 
-        form = SubmissionForm(
-            request.POST,
-            request.FILES
-        )
+        form = SubmissionForm(request.POST, request.FILES)
 
         if form.is_valid():
 
             submission = form.save(commit=False)
 
             submission.assignment = assignment
-
             submission.student = request.user
 
+            # Check late submission
             if timezone.now() > assignment.due_date:
                 submission.is_late = True
                 submission.status = "Late"
@@ -211,7 +212,7 @@ def submit_assignment(request, pk):
 
             submission.save()
 
-            return redirect("assignment_detail", assignment.id)
+            return redirect("assignment_detail", pk=assignment.id)
 
     else:
         form = SubmissionForm()
@@ -222,5 +223,31 @@ def submit_assignment(request, pk):
         {
             "assignment": assignment,
             "form": form,
+        }
+    )
+
+
+@login_required
+def view_submissions(request, assignment_id):
+
+    assignment = get_object_or_404(
+        Assignment,
+        id=assignment_id
+    )
+
+    # Only room host can see submissions
+    if request.user != assignment.created_by:
+        return redirect("assignment_detail", pk=assignment.id)
+
+    submissions = Submission.objects.filter(
+        assignment=assignment
+    ).select_related("student")
+
+    return render(
+        request,
+        "resources/view_submissions.html",
+        {
+            "assignment": assignment,
+            "submissions": submissions,
         }
     )

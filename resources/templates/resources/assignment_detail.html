@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+
+<div class="container py-4">
+
+    <a href="{% url 'assignment_list' assignment.room.id %}"
+       class="btn btn-outline-secondary mb-3">
+        ← Back to Assignments
+    </a>
+
+    <div class="card shadow-lg border-0 rounded-4">
+
+        <div class="card-header bg-warning text-dark py-3 rounded-top-4">
+
+            <h3 class="mb-0">{{ assignment.title }}</h3>
+
+            <small>
+                📚 {{ assignment.room.name }}
+            </small>
+
+        </div>
+
+        <div class="card-body">
+
+            <p class="text-muted">
+                {{ assignment.description }}
+            </p>
+
+            <hr>
+
+            <p><strong>👩‍🏫 Created By:</strong> {{ assignment.created_by.username }}</p>
+
+            <p><strong>📅 Due Date:</strong> {{ assignment.due_date }}</p>
+
+            <p><strong>🎯 Total Marks:</strong> {{ assignment.total_marks }}</p>
+
+            {% if assignment.assignment_file %}
+
+                <a href="{{ assignment.assignment_file.url }}"
+                   class="btn btn-primary"
+                   target="_blank">
+                    📄 View Assignment File
+                </a>
+
+            {% endif %}
+
+        </div>
+
+    </div>
+
+    <div class="mt-4">
+
+    {% if request.user == assignment.created_by %}
+
+        <a href="{% url 'view_submissions' assignment.id %}"
+           class="btn btn-dark rounded-pill">
+            📥 View Submissions
+        </a>
+
+    {% else %}
+
+        {% if submission %}
+
+            <div class="alert alert-success rounded-4">
+
+                <h5>✅ You have already submitted this assignment.</h5>
+
+                <p class="mb-2">
+                    Submitted on: {{ submission.submitted_at }}
+                </p>
+
+                <a href="{{ submission.submitted_file.url }}"
+                   target="_blank"
+                   class="btn btn-success btn-sm">
+                    📄 View My Submission
+                </a>
+
+            </div>
+
+        {% else %}
+
+            <a href="{% url 'submit_assignment' assignment.id %}"
+               class="btn btn-success rounded-pill">
+                📤 Submit Assignment
+            </a>
+
+        {% endif %}
+
+    {% endif %}
+
+</div>
+
+{% endblock %}

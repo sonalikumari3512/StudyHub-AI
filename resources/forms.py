@@ -62,15 +62,16 @@ class AssignmentForm(forms.ModelForm):
 
 # ===============================
 # SUBMISSION FORM
-# ===============================
+# =========================
 
 class SubmissionForm(forms.ModelForm):
 
     class Meta:
         model = Submission
-
         fields = ["submitted_file"]
 
         widgets = {
-            "submitted_file": forms.ClearableFileInput(attrs={"class":"form-control"})
+            "submitted_file": forms.ClearableFileInput(
+                attrs={"class": "form-control"}
+            ),
         }

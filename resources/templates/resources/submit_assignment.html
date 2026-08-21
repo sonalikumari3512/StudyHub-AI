@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+
+<div class="container py-4">
+
+    <a href="{% url 'assignment_detail' assignment.id %}"
+       class="btn btn-outline-secondary mb-3">
+        ← Back to Assignment
+    </a>
+
+    <div class="card shadow-lg border-0 rounded-4">
+
+        <div class="card-header bg-success text-white py-3 rounded-top-4">
+            <h3 class="mb-0">📤 Submit Assignment</h3>
+            <small>{{ assignment.title }}</small>
+        </div>
+
+        <div class="card-body p-4">
+
+            <form method="POST" enctype="multipart/form-data">
+
+                {% csrf_token %}
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold">
+                        Upload Your Assignment (PDF / ZIP / Image)
+                    </label>
+
+                    {{ form.submitted_file }}
+                </div>
+
+
+                <button type="submit"
+                        class="btn btn-success rounded-pill px-4">
+                    ✅ Submit Assignment
+                </button>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}
