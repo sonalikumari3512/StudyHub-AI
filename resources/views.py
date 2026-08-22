@@ -5,7 +5,7 @@ from django.contrib import messages
 from rooms.models import Room
 
 from .models import Resource, Assignment, Submission
-from .forms import ResourceForm, AssignmentForm, SubmissionForm
+from .forms import ResourceForm, AssignmentForm, SubmissionForm,GradeSubmissionForm
 
 @login_required
 def upload_resource(request):
@@ -249,5 +249,49 @@ def view_submissions(request, assignment_id):
         {
             "assignment": assignment,
             "submissions": submissions,
+        }
+    )
+
+@login_required
+def grade_submission(request, submission_id):
+    submission = get_object_or_404(
+        Submission,
+        id=submission_id
+    )
+
+    room = submission.assignment.room
+
+    # Only Host Can Grade
+    if request.user != room.host:
+        messages.error(request, "Only host can grade submissions.")
+        return redirect("assignment_detail", submission.assignment.id)
+
+    if request.method == "POST":
+        form = GradeSubmissionForm(
+            request.POST,
+            instance=submission
+        )
+
+        if form.is_valid():
+            graded = form.save(commit=False)
+            graded.status = "Graded"
+            graded.save()
+
+            messages.success(request, "Submission graded successfully.")
+
+            return redirect(
+                "view_submissions",
+                submission.assignment.id
+            )
+
+    else:
+        form = GradeSubmissionForm(instance=submission)
+
+    return render(
+        request,
+        "resources/grade_submission.html",
+        {
+            "submission": submission,
+            "form": form,
         }
     )

@@ -63,28 +63,77 @@
 
         {% if submission %}
 
-            <div class="alert alert-success rounded-4">
 
-                <h5>✅ You have already submitted this assignment.</h5>
+                <div class="alert alert-success rounded-4">
 
-                <p class="mb-2">
-                    Submitted on: {{ submission.submitted_at }}
-                </p>
+                    <h5>✅ You have already submitted this assignment.</h5>
 
-                <a href="{{ submission.submitted_file.url }}"
-                   target="_blank"
-                   class="btn btn-success btn-sm">
-                    📄 View My Submission
-                </a>
+                    <p class="mb-2">
+                        Submitted on: {{ submission.submitted_at }}
+                    </p>
 
-            </div>
+                    <a href="{{ submission.submitted_file.url }}"
+                    target="_blank"
+                    class="btn btn-success btn-sm">
+                        📄 View My Submission
+                    </a>
 
+                </div>
+
+                <!-- Submission Result -->
+                <hr>
+
+                <h5 class="text-success">📋 Submission Result</h5>
+
+                <div class="card border-success shadow-sm rounded-3">
+
+                    <div class="card-body">
+
+                        <p>
+                            <strong>Status :</strong>
+
+                            <span class="badge bg-success">
+                                {{ submission.status }}
+                            </span>
+                        </p>
+
+                        <p>
+                            <strong>Marks :</strong>
+
+                            {% if submission.marks %}
+                                {{ submission.marks }} / {{ assignment.total_marks }}
+                            {% else %}
+                                Pending
+                            {% endif %}
+                        </p>
+
+                        <p>
+                            <strong>Feedback :</strong>
+                        </p>
+
+                        {% if submission.feedback %}
+
+                            <div class="alert alert-success">
+                                {{ submission.feedback }}
+                            </div>
+
+                        {% else %}
+
+                            <p class="text-muted">
+                                Feedback not added yet.
+                            </p>
+
+                        {% endif %}
+
+                    </div>
+
+                </div>
         {% else %}
 
-            <a href="{% url 'submit_assignment' assignment.id %}"
-               class="btn btn-success rounded-pill">
-                📤 Submit Assignment
-            </a>
+        <a href="{% url 'submit_assignment' assignment.id %}"
+            class="btn btn-success rounded-pill">
+            📤 Submit Assignment
+        </a>
 
         {% endif %}
 

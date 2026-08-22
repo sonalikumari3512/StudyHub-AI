@@ -75,3 +75,20 @@ class SubmissionForm(forms.ModelForm):
                 attrs={"class": "form-control"}
             ),
         }
+
+
+class GradeSubmissionForm(forms.ModelForm):
+    class Meta:
+        model = Submission
+        fields = ["marks", "feedback"]
+        widgets = {
+            "marks": forms.NumberInput(attrs={
+                "class": "form-control",
+                "placeholder": "Enter Marks"
+            }),
+            "feedback": forms.Textarea(attrs={
+                "class": "form-control",
+                "rows": 4,
+                "placeholder": "Write feedback..."
+            }),
+        }

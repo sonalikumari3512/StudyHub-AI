@@ -32,4 +32,6 @@ urlpatterns = [
 
     # Host will use this tomorrow
     path("assignment/<int:assignment_id>/submissions/", views.view_submissions, name="view_submissions"),
+    path(
+    "submission/<int:submission_id>/grade/",views.grade_submission,name="grade_submission"),
 ]

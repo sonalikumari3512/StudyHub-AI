@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+
+<div class="container py-4">
+
+    <div class="card shadow rounded-4 border-0">
+
+        <div class="card-header bg-success text-white rounded-top-4">
+            <h3>📝 Grade Submission</h3>
+        </div>
+
+        <div class="card-body">
+
+            <h5>{{ submission.assignment.title }}</h5>
+            <p>
+                Student:
+                <strong>{{ submission.student.username }}</strong>
+            </p>
+
+            <p>
+                Submitted:
+                {{ submission.submitted_at|date:"d M Y • h:i A" }}
+            </p>
+
+            <a href="{{ submission.submitted_file.url }}"
+               class="btn btn-outline-primary mb-3"
+               target="_blank">
+                📄 View Submitted File
+            </a>
+
+            <form method="POST">
+                {% csrf_token %}
+
+                <label class="form-label fw-bold">Marks</label>
+                {{ form.marks }}
+
+                <br>
+
+                <label class="form-label fw-bold">Feedback</label>
+                {{ form.feedback }}
+
+                <div class="mt-4 d-flex gap-2">
+                    <button class="btn btn-success">
+                        ✅ Save Grade
+                    </button>
+
+                    <a href="{% url 'view_submissions' submission.assignment.id %}"
+                       class="btn btn-secondary">
+                        Cancel
+                    </a>
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}
