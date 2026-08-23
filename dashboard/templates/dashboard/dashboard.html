@@ -1,25 +1,348 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block content %}
 
-<div class="container mt-5">
+<link rel="stylesheet" href="{% static 'dashboard/dashboard.css' %}">
 
-    <h2>Dashboard</h2>
+<div class="container py-4">
 
-    <hr>
+    <!-- ================= Welcome Card ================= -->
+    <div class="card welcome-card shadow-lg border-0 rounded-4 mb-4">
+        <div class="card-body">
+            <h2>👋 Welcome, {{ request.user.first_name|default:request.user.username }}!</h2>
+            <p class="mb-2">
+                Welcome back to <strong>StudyHub</strong>. Keep learning and stay consistent.
+            </p>
+            <small>
+                🎓 {{ profile.college }} | {{ profile.branch }} | Year {{ profile.year }}
+            </small>
+        </div>
+    </div>
 
-    <div class="card p-4">
+    <!-- ================= Analytics Cards ================= -->
+    <div class="row g-4 mb-4">
 
-        <h4>Welcome {{ request.user.username }} 👋</h4>
-        <a href="{% url 'create_room' %}" class="btn btn-success mb-3">
-            + Create Room
-        </a>
+        <div class="col-md-3">
+            <div class="card analytics-card room-card shadow-sm h-100">
+                <div class="card-body text-center">
+                    <h1>📚</h1>
+                    <h2>{{ rooms_count }}</h2>
+                    <p class="mb-0">Rooms Joined</p>
+                </div>
+            </div>
+        </div>
 
-        <p><strong>College:</strong> {{ profile.college }}</p>
+        <div class="col-md-3">
+            <div class="card analytics-card resource-card shadow-sm h-100">
+                <div class="card-body text-center">
+                    <h1>📄</h1>
+                    <h2>{{ resources_count }}</h2>
+                    <p class="mb-0">Resources Uploaded</p>
+                </div>
+            </div>
+        </div>
 
-        <p><strong>Year:</strong> {{ profile.year }}</p>
+        <div class="col-md-3">
+            <div class="card analytics-card submit-card shadow-sm h-100">
+                <div class="card-body text-center">
+                    <h1>✅</h1>
+                    <h2>{{ submitted_count }}</h2>
+                    <p class="mb-0">Assignments Submitted</p>
+                </div>
+            </div>
+        </div>
 
-        <p><strong>Branch:</strong> {{ profile.branch }}</p>
+        <div class="col-md-3">
+            <div class="card analytics-card pending-card shadow-sm h-100">
+                <div class="card-body text-center">
+                    <h1>⏳</h1>
+                    <h2>{{ pending_count }}</h2>
+                    <p class="mb-0">Assignments Pending</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ================= Progress Card ================= -->
+    <div class="card shadow-sm rounded-4 border-0 mb-4">
+        <div class="card-body">
+
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h4>📈 Study Progress</h4>
+                <strong>{{ progress }}%</strong>
+            </div>
+
+            <div class="progress" style="height:22px;">
+                <div class="progress-bar bg-success progress-bar-striped progress-bar-animated"
+                     role="progressbar"
+                     style="width:{{ progress }}%;">
+                    {{ progress }}%
+                </div>
+            </div>
+
+            <small class="text-muted">
+                Progress is based on submitted assignments.
+            </small>
+
+        </div>
+    </div>
+
+    <!-- ================= Upcoming Deadlines ================= -->
+    <div class="card shadow-sm rounded-4 border-0 mb-4">
+
+        <div class="card-header bg-warning">
+            <h5 class="mb-0">📝 Upcoming Assignment Deadlines</h5>
+        </div>
+
+        <div class="card-body">
+
+            {% if upcoming_assignments %}
+
+                {% for assignment in upcoming_assignments %}
+
+                    <!-- UPDATED DEADLINE BLOCK -->
+                    <div class="deadline-item d-flex justify-content-between align-items-center">
+
+                        <div>
+
+                            <a href="{% url 'assignment_detail' assignment.id %}"
+                               class="text-decoration-none fw-bold text-dark">
+
+                                {{ assignment.title }}
+
+                            </a>
+
+                            <br>
+
+                            <small class="text-muted">
+                                📚 {{ assignment.room.name }}
+                            </small>
+
+                        </div>
+
+                        <div class="text-end">
+
+                            <span class="badge bg-danger">
+                                {{ assignment.due_date|date:"d M Y" }}
+                            </span>
+
+                            <br>
+
+                            <small class="text-muted">
+                                {{ assignment.total_marks }} Marks
+                            </small>
+
+                        </div>
+
+                    </div>
+
+                {% endfor %}
+
+            {% else %}
+
+                <!-- UPDATED EMPTY MESSAGE -->
+                <div class="text-center py-4">
+
+                    <h1>🎉</h1>
+
+                    <p class="text-muted mb-0">
+                        You're all caught up! No upcoming assignments.
+                    </p>
+
+                </div>
+
+            {% endif %}
+
+        </div>
+    </div>
+
+    <!-- ================= Recent Activity ================= -->
+    <div class="row g-4 mb-4">
+
+        <!-- Recent Resources -->
+        <div class="col-lg-6">
+
+            <div class="card shadow-sm rounded-4 border-0 h-100">
+
+                <div class="card-header bg-info text-white">
+                    📄 Recently Uploaded Resources
+                </div>
+
+                <div class="card-body">
+
+                    {% if recent_resources %}
+
+                        {% for resource in recent_resources %}
+
+                            <!-- UPDATED RESOURCE TIMELINE -->
+                            <div class="timeline-item">
+
+                                <div class="d-flex justify-content-between">
+
+                                    <strong>{{ resource.title }}</strong>
+
+                                    <span class="badge bg-info">
+                                        {{ resource.category }}
+                                    </span>
+
+                                </div>
+
+                                <small class="text-muted">
+                                    Uploaded {{ resource.created_at|date:"d M Y • h:i A" }}
+                                </small>
+
+                            </div>
+
+                        {% endfor %}
+
+                    {% else %}
+
+                        <!-- UPDATED EMPTY MESSAGE -->
+                        <div class="text-center py-4">
+
+                            <h1>📄</h1>
+
+                            <p class="text-muted">
+                                Upload your first study resource.
+                            </p>
+
+                        </div>
+
+                    {% endif %}
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- Recent Submissions -->
+        <div class="col-lg-6">
+
+            <div class="card shadow-sm rounded-4 border-0 h-100">
+
+                <div class="card-header bg-success text-white">
+                    ✅ Recent Assignment Submissions
+                </div>
+
+                <div class="card-body">
+
+                    {% if recent_submissions %}
+
+                        {% for submission in recent_submissions %}
+
+                            <!-- UPDATED SUBMISSION BLOCK -->
+                            <div class="timeline-item">
+
+                                <strong>{{ submission.assignment.title }}</strong>
+
+                                <br>
+
+                                <small class="text-muted">
+                                    {{ submission.assignment.room.name }}
+                                </small>
+
+                                <br><br>
+
+                                {% if submission.status == "Graded" %}
+
+                                    <span class="badge bg-success">
+                                        ⭐ Graded
+                                    </span>
+
+                                    {% if submission.marks %}
+                                        <span class="badge bg-dark">
+                                            {{ submission.marks }}/{{ submission.assignment.total_marks }}
+                                        </span>
+                                    {% endif %}
+
+                                {% elif submission.status == "Late" %}
+
+                                    <span class="badge bg-danger">
+                                        ⏰ Late
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="badge bg-primary">
+                                        📤 Submitted
+                                    </span>
+
+                                {% endif %}
+
+                                <br>
+
+                                <small class="text-muted">
+                                    {{ submission.submitted_at|date:"d M Y • h:i A" }}
+                                </small>
+
+                            </div>
+
+                        {% endfor %}
+
+                    {% else %}
+
+                        <!-- UPDATED EMPTY MESSAGE -->
+                        <div class="text-center py-4">
+
+                            <h1>✅</h1>
+
+                            <p class="text-muted">
+                                No assignments submitted yet.
+                            </p>
+
+                        </div>
+
+                    {% endif %}
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- ================= Quick Actions ================= -->
+    <div class="card shadow-sm rounded-4 border-0">
+
+        <div class="card-header bg-primary text-white">
+            ⚡ Quick Actions
+        </div>
+
+        <div class="card-body">
+
+            <div class="row g-3 text-center">
+
+                <div class="col-md-3">
+                    <a href="{% url 'rooms' %}" class="btn btn-outline-primary w-100">
+                        📚 Study Rooms
+                    </a>
+                </div>
+
+                <div class="col-md-3">
+                    <a href="{% url 'upload_resource' %}" class="btn btn-outline-success w-100">
+                        📤 Upload Resource
+                    </a>
+                </div>
+
+                <div class="col-md-3">
+                    <a href="{% url 'resource_list' %}" class="btn btn-outline-info w-100">
+                        📄 All Resources
+                    </a>
+                </div>
+
+                <div class="col-md-3">
+                    <button class="btn btn-outline-warning w-100" disabled>
+                          ✅ My Tasks
+                    </button>
+                </div>
+
+            </div>
+
+        </div>
 
     </div>
 

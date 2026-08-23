@@ -1,0 +1,106 @@
+/* =======================================
+   STUDYHUB DASHBOARD - DAY 31
+======================================= */
+
+body{
+    background:#f5f7fb;
+}
+
+/* Welcome Banner */
+
+.welcome-card{
+    background:linear-gradient(135deg,#2563eb,#7c3aed);
+    color:white;
+}
+
+.welcome-card h2{
+    font-weight:700;
+}
+
+.welcome-card p{
+    opacity:.95;
+}
+
+/* Analytics Cards */
+
+.analytics-card{
+    border:none;
+    border-radius:20px;
+    transition:0.3s ease;
+}
+
+.analytics-card:hover{
+    transform:translateY(-6px);
+    box-shadow:0 10px 25px rgba(0,0,0,.15);
+}
+
+.analytics-card h1{
+    font-size:2.4rem;
+}
+
+.analytics-card h2{
+    font-weight:700;
+    margin-top:10px;
+}
+
+.room-card{
+    background:#dbeafe;
+}
+
+.resource-card{
+    background:#dcfce7;
+}
+
+.submit-card{
+    background:#ede9fe;
+}
+
+.pending-card{
+    background:#fef3c7;
+}
+
+/* Progress */
+
+.progress{
+    border-radius:20px;
+}
+
+.progress-bar{
+    font-weight:600;
+}
+
+/* Deadline List */
+
+.deadline-item{
+    padding:14px 0;
+    border-bottom:1px solid #ececec;
+}
+
+.deadline-item:last-child{
+    border-bottom:none;
+}
+
+/* Timeline */
+
+.timeline-item{
+    border-left:4px solid #2563eb;
+    padding-left:14px;
+    margin-bottom:18px;
+}
+
+.timeline-item strong{
+    color:#1e3a8a;
+}
+
+/* Quick Action Buttons */
+
+.card .btn{
+    border-radius:12px;
+    padding:10px;
+    font-weight:600;
+    transition:0.3s;
+}
+
+.card .btn:hover{
+    transform:scale(1.03);
+}
