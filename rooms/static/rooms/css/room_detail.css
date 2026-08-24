@@ -149,3 +149,29 @@
 #empty-chat{
     color:gray;
 }
+
+/* Announcements */
+
+.announcement-card{
+
+    background:#f8fafc;
+
+    border-left:5px solid #2563eb;
+
+    border-radius:15px;
+
+    padding:20px;
+
+}
+
+.announcement-card h5{
+
+    color:#1e3a8a;
+
+}
+
+.announcement-card p{
+
+    white-space:pre-wrap;
+
+}

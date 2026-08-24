@@ -1,5 +1,5 @@
 from django import forms
-from .models import Room, Message
+from .models import Room, Message,Announcement
 
 
 class RoomForm(forms.ModelForm):
@@ -27,4 +27,33 @@ class MessageForm(forms.ModelForm):
                     "placeholder": "Type your message..."
                 }
             )
+        }
+
+
+
+class AnnouncementForm(forms.ModelForm):
+
+    class Meta:
+
+        model = Announcement
+
+        fields = ["title", "content", "attachment"]
+
+        widgets = {
+
+            "title": forms.TextInput(attrs={
+                "class":"form-control",
+                "placeholder":"Announcement title"
+            }),
+
+            "content": forms.Textarea(attrs={
+                "class":"form-control",
+                "rows":5,
+                "placeholder":"Write announcement..."
+            }),
+
+            "attachment": forms.ClearableFileInput(attrs={
+                "class":"form-control"
+            })
+
         }

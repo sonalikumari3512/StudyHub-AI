@@ -11,4 +11,21 @@ urlpatterns = [
     path("<int:pk>/leave/", views.leave_room, name="leave_room"),
     path(
     "room/<int:room_id>/messages/",views.room_messages, name="room_messages"),
+    path(
+    "<int:room_id>/announcement/create/",
+    views.create_announcement,
+    name="create_announcement",
+    ),
+
+    path(
+        "announcement/<int:pk>/edit/",
+        views.edit_announcement,
+        name="edit_announcement",
+    ),
+
+    path(
+        "announcement/<int:pk>/delete/",
+        views.delete_announcement,
+        name="delete_announcement",
+    ),
 ]

@@ -97,7 +97,106 @@
         </div>
 
     </div>
+    <!-- ================= Announcements ================= -->
 
+<div class="card shadow-sm rounded-4 border-0 mb-4">
+
+    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+
+        <h5 class="mb-0">📢 Room Announcements</h5>
+
+        {% if request.user == room.host %}
+        <a href="{% url 'create_announcement' room.id %}"
+           class="btn btn-light btn-sm">
+
+            ➕ New
+
+        </a>
+        {% endif %}
+
+    </div>
+
+    <div class="card-body">
+
+        {% if announcements %}
+
+            {% for announcement in announcements %}
+
+                <div class="announcement-card mb-4">
+
+                    <div class="d-flex justify-content-between">
+
+                        <div>
+
+                            <h5>{{ announcement.title }}</h5>
+
+                            <small class="text-muted">
+
+                                👑 {{ announcement.author.username }}
+
+                                • {{ announcement.created_at|date:"d M Y • h:i A" }}
+
+                            </small>
+
+                        </div>
+
+                        {% if request.user == room.host %}
+
+                        <div>
+
+                            <a href="{% url 'edit_announcement' announcement.id %}"
+                               class="btn btn-warning btn-sm">
+
+                                Edit
+
+                            </a>
+
+                            <a href="{% url 'delete_announcement' announcement.id %}"
+                               class="btn btn-danger btn-sm">
+
+                                Delete
+
+                            </a>
+
+                        </div>
+
+                        {% endif %}
+
+                    </div>
+
+                    <hr>
+
+                    <p>{{ announcement.content }}</p>
+
+                    {% if announcement.attachment %}
+
+                    <a href="{{ announcement.attachment.url }}"
+                       target="_blank"
+                       class="btn btn-outline-primary btn-sm">
+
+                        📎 View Attachment
+
+                    </a>
+
+                    {% endif %}
+
+                </div>
+
+            {% endfor %}
+
+        {% else %}
+
+            <div class="text-center text-muted py-3">
+
+                📭 No announcements yet.
+
+            </div>
+
+        {% endif %}
+
+    </div>
+
+</div>
     <div class="row">
 
         <!-- CHAT -->
