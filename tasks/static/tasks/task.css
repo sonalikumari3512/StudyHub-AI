@@ -1,0 +1,69 @@
+/* ===== Day 33 Task Manager ===== */
+
+body{
+    background:#f5f7fb;
+}
+
+/* Banner */
+
+.task-banner{
+    background:linear-gradient(135deg,#2563eb,#9333ea);
+    color:white;
+}
+
+/* Analytics */
+
+.stat-card{
+    border:none;
+    border-radius:20px;
+    transition:0.3s;
+}
+
+.stat-card:hover{
+    transform:translateY(-5px);
+}
+
+.total-card{
+    background:#dbeafe;
+}
+
+.completed-card{
+    background:#dcfce7;
+}
+
+.pending-card{
+    background:#fef3c7;
+}
+
+.overdue-card{
+    background:#fee2e2;
+}
+
+/* Progress */
+
+.progress{
+    border-radius:20px;
+}
+
+/* Task Card */
+
+.task-card{
+    transition:0.3s;
+}
+
+.task-card:hover{
+    transform:translateY(-4px);
+    box-shadow:0 10px 20px rgba(0,0,0,.08);
+}
+
+.task-card h5{
+    font-weight:700;
+}
+
+.badge{
+    margin-right:5px;
+}
+
+.btn-sm{
+    border-radius:10px;
+}

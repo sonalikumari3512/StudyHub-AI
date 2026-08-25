@@ -1,0 +1,235 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+
+<link rel="stylesheet" href="{% static 'tasks/task.css' %}">
+
+<div class="container py-4">
+
+    <!-- ================= Welcome Banner ================= -->
+
+    <div class="card task-banner shadow-lg border-0 rounded-4 mb-4">
+        <div class="card-body">
+            <h2>📋 My Study Tasks</h2>
+            <p class="mb-0">
+                Organize your daily study goals and track your progress.
+            </p>
+        </div>
+    </div>
+
+    <!-- ================= Analytics Cards ================= -->
+
+    <div class="row g-4 mb-4">
+
+        <div class="col-md-3">
+            <div class="card stat-card total-card shadow-sm">
+                <div class="card-body text-center">
+                    <h1>📚</h1>
+                    <h3>{{ total }}</h3>
+                    <p>Total Tasks</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card stat-card completed-card shadow-sm">
+                <div class="card-body text-center">
+                    <h1>✅</h1>
+                    <h3>{{ completed }}</h3>
+                    <p>Completed</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card stat-card pending-card shadow-sm">
+                <div class="card-body text-center">
+                    <h1>⏳</h1>
+                    <h3>{{ pending }}</h3>
+                    <p>Pending</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card stat-card overdue-card shadow-sm">
+                <div class="card-body text-center">
+                    <h1>⚠️</h1>
+                    <h3>{{ overdue }}</h3>
+                    <p>Overdue</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ================= Progress ================= -->
+
+    <div class="card shadow-sm rounded-4 border-0 mb-4">
+        <div class="card-body">
+
+            <div class="d-flex justify-content-between">
+                <h5>📈 Completion Progress</h5>
+                <strong>{{ progress }}%</strong>
+            </div>
+
+            <div class="progress mt-3" style="height:22px;">
+                <div class="progress-bar bg-success progress-bar-striped progress-bar-animated"
+                     style="width:{{ progress }}%;">
+                    {{ progress }}%
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ================= Add Button ================= -->
+
+    <div class="text-end mb-4">
+        <a href="{% url 'create_task' %}"
+           class="btn btn-primary rounded-pill px-4">
+            ➕ Add New Task
+        </a>
+    </div>
+
+    <!-- ================= Task List ================= -->
+
+    {% if tasks %}
+
+    <div class="row g-4">
+
+        {% for task in tasks %}
+
+        <div class="col-lg-6">
+
+            <div class="card task-card shadow-sm rounded-4 border-0 h-100">
+
+                <div class="card-body">
+
+                    <div class="d-flex justify-content-between align-items-start">
+
+                        <div>
+
+                            {% if task.completed %}
+                                <h5 class="text-decoration-line-through text-muted">
+                                    {{ task.title }}
+                                </h5>
+                            {% else %}
+                                <h5>{{ task.title }}</h5>
+                            {% endif %}
+
+                            <span class="badge bg-info">
+                                {{ task.category }}
+                            </span>
+
+                            {% if task.priority == "High" %}
+                                <span class="badge bg-danger">High</span>
+
+                            {% elif task.priority == "Medium" %}
+                                <span class="badge bg-warning text-dark">Medium</span>
+
+                            {% else %}
+                                <span class="badge bg-success">Low</span>
+
+                            {% endif %}
+
+                        </div>
+
+                    </div>
+
+                    <hr>
+
+                    <p>{{ task.description }}</p>
+
+                    <div class="mb-2">
+
+                        <small class="text-muted">
+                            📅 Due: {{ task.due_date }}
+                        </small>
+
+                    </div>
+
+                    {% if task.is_overdue %}
+
+                    <span class="badge bg-danger mb-3">
+                        ⚠️ Overdue
+                    </span>
+
+                    {% elif task.completed %}
+
+                    <span class="badge bg-success mb-3">
+                        ✅ Completed
+                    </span>
+
+                    {% else %}
+
+                    <span class="badge bg-primary mb-3">
+                        ⏳ Pending
+                    </span>
+
+                    {% endif %}
+
+                    <div class="d-flex flex-wrap gap-2 mt-3">
+
+                        <a href="{% url 'toggle_task' task.id %}"
+                           class="btn btn-success btn-sm">
+
+                            {% if task.completed %}
+                                ↩ Undo
+                            {% else %}
+                                ✔ Complete
+                            {% endif %}
+
+                        </a>
+
+                        <a href="{% url 'edit_task' task.id %}"
+                           class="btn btn-warning btn-sm">
+                            ✏️ Edit
+                        </a>
+
+                        <a href="{% url 'delete_task' task.id %}"
+                           class="btn btn-danger btn-sm">
+                            🗑 Delete
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        {% endfor %}
+
+    </div>
+
+    {% else %}
+
+    <div class="card shadow-sm rounded-4 border-0 text-center py-5">
+
+        <div class="card-body">
+
+            <h1>📋</h1>
+
+            <h4>No Tasks Yet</h4>
+
+            <p class="text-muted">
+                Start planning your study schedule today.
+            </p>
+
+            <a href="{% url 'create_task' %}"
+               class="btn btn-primary rounded-pill">
+                ➕ Create First Task
+            </a>
+
+        </div>
+
+    </div>
+
+    {% endif %}
+
+</div>
+
+{% endblock %}

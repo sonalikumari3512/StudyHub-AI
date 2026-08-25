@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+
+<div class="container py-4">
+
+    <div class="card shadow rounded-4 border-0">
+
+        <div class="card-header bg-primary text-white">
+
+            {% if edit %}
+                ✏️ Edit Task
+            {% else %}
+                ➕ Create Task
+            {% endif %}
+
+        </div>
+
+        <div class="card-body">
+
+            <form method="POST">
+
+                {% csrf_token %}
+
+                <label>Task Title</label>
+                {{ form.title }}
+
+                <br>
+
+                <label>Description</label>
+                {{ form.description }}
+
+                <br>
+
+                <label>Category</label>
+                {{ form.category }}
+
+                <br>
+
+                <label>Priority</label>
+                {{ form.priority }}
+
+                <br>
+
+                <label>Due Date</label>
+                {{ form.due_date }}
+
+                <br>
+
+                <button class="btn btn-primary mt-3">
+
+                    💾 Save Task
+
+                </button>
+
+                <a href="{% url 'task_list' %}"
+                   class="btn btn-secondary mt-3">
+
+                    Cancel
+
+                </a>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

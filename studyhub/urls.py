@@ -25,6 +25,7 @@ urlpatterns = [
     path("dashboard/", include("dashboard.urls")),
     path("rooms/", include("rooms.urls")),
     path("resources/",include("resources.urls")),
+    path("tasks/",include("tasks.urls")),
 ]
 
 urlpatterns += static(

@@ -85,38 +85,34 @@
 <div class="container">
 
 
-    <a class="navbar-brand" href="#">
-
-        StudyHub AI
-
-    </a>
-
-
-
-    <button class="navbar-toggler"
-            type="button"
-            data-bs-toggle="collapse"
-            data-bs-target="#navbarNav">
-
-
-        <span class="navbar-toggler-icon"></span>
-
-
-    </button>
+    <!-- Logo -->
+        <a class="navbar-brand fw-bold" href="{% url 'home' %}">
+            🎓 StudyHub AI
+        </a>
 
 
 
+    <!-- Mobile Toggle -->
+        <button class="navbar-toggler"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+
+     <!-- Navbar -->
     <div class="collapse navbar-collapse"
          id="navbarNav">
 
 
-        <ul class="navbar-nav ms-auto">
+        <ul class="navbar-nav ms-auto align-items-center">
 
 
 
             <li class="nav-item">
 
-                <a class="nav-link active" href="#">
+                <a class="nav-link active" href="{% url 'home' %}">
 
                     Home
 
@@ -128,7 +124,7 @@
 
             <li class="nav-item">
 
-                <a class="nav-link" href="#">
+                <a class="nav-link" href="{% url 'rooms' %}">
 
                     Rooms
 
@@ -143,104 +139,66 @@
 
 
 
-            <!-- ============================ -->
-            <!-- NOTIFICATION BELL -->
-            <!-- ============================ -->
+            <!-- Dashboard -->
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'dashboard' %}">
+                        📊 Dashboard
+                    </a>
+                </li>
 
+                <!-- Resources -->
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'resource_list' %}">
+                        📚 Resources
+                    </a>
+                </li>
 
-            <li class="nav-item notification-wrapper ms-3">
+                <!-- Tasks (NEW) -->
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'task_list' %}">
+                        ✅ Tasks
+                    </a>
+                </li>
 
+                <!-- Notification Bell -->
+                <li class="nav-item notification-wrapper ms-2">
+                    <a class="nav-link position-relative"
+                       href="#"
+                       id="notification-button">
 
-                <a class="nav-link"
-                   href="#"
-                   id="notification-button">
+                        🔔
 
+                        <span id="notification-count"
+                              class="badge bg-danger d-none position-absolute top-0 start-100 translate-middle">
+                            0
+                        </span>
 
-                    🔔
+                    </a>
 
+                    <div id="notification-box">
 
-                    <span
-                    id="notification-count"
-                    class="badge bg-danger d-none">
-
-
-                        0
-
-
-                    </span>
-
-
-                </a>
-
-
-
-
-                <div id="notification-box">
-
-
-
-                    <div class="p-3 fw-bold">
-
-                        Notifications
-
-                    </div>
-
-
-
-                    <div id="notification-list">
-
-
-                        <div class="notification-item text-muted">
-
-                            No notifications
-
+                        <div class="p-3 fw-bold border-bottom">
+                            Notifications
                         </div>
 
+                        <div id="notification-list">
+                            <div class="notification-item text-muted">
+                                No notifications
+                            </div>
+                        </div>
 
                     </div>
+                </li>
 
-
-
-                </div>
-
-
-
-            </li>
-
-
-
-
-
-            <li class="nav-item">
-
-                <a class="nav-link"
-                   href="{% url 'dashboard' %}">
-
-
-                    Dashboard
-
-
-                </a>
-
-
-            </li>
-
-             <a href="{% url 'resource_list' %}" class="nav-link">
-                📚 Resources
-            </a>
 
              
-
+            <!-- Welcome User -->
             <li class="nav-item">
 
 
-                <a class="nav-link">
-
-
-                    Welcome {{ user.username }} 👋
-
-
-                </a>
+                <span class="nav-link text-warning fw-semibold">
+                        👋 {{ user.username }}
+                    </span>
 
 
             </li>
