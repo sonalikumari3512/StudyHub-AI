@@ -1,0 +1,260 @@
+{% extends "base.html" %}
+{% load static dashboard_tags %}
+
+{% block content %}
+
+<link rel="stylesheet" href="{% static 'dashboard/calendar.css' %}">
+
+<div class="container py-4">
+
+    <!-- ================= Header ================= -->
+
+    <div class="card calendar-header shadow-lg border-0 rounded-4 mb-4">
+        <div class="card-body text-center">
+            <h2>📅 StudyHub Calendar</h2>
+            <p class="mb-0">{{ month_name }} {{ year }}</p>
+        </div>
+    </div>
+
+    <div class="row">
+
+        <!-- ================= Calendar ================= -->
+
+        <div class="col-lg-8">
+
+            <div class="card shadow rounded-4 border-0 mb-4">
+
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">📆 Monthly Calendar</h5>
+                </div>
+
+                <div class="card-body">
+
+                    <table class="table table-bordered text-center calendar-table align-middle">
+
+                        <thead class="table-light">
+                            <tr>
+                                <th>Mon</th>
+                                <th>Tue</th>
+                                <th>Wed</th>
+                                <th>Thu</th>
+                                <th>Fri</th>
+                                <th>Sat</th>
+                                <th>Sun</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+
+                        {% for week in calendar %}
+                            <tr>
+
+                            {% for day in week %}
+
+                                {% if day == 0 %}
+
+                                    <td class="empty-day"></td>
+
+                                {% else %}
+
+                                    <td class="{% if day == today %}today-cell{% endif %}">
+
+                                        <div class="day-number">
+
+                                            {{ day }}
+
+                                        </div>
+
+                                        <!-- Assignment Dot -->
+
+                                        <!-- Assignment Events -->
+                                        {% if day in assignment_days %}
+                                            {% for assignment in assignment_days|get_item:day|slice:":2" %}
+                                                <div class="event assignment-event"
+                                                    title="{{ assignment.title }}">
+                                                    📚 {{ assignment.title|truncatechars:14 }}
+                                                </div>
+                                            {% endfor %}
+
+                                            {% if assignment_days|get_item:day|length > 2 %}
+                                                <small class="more-events text-danger">
+                                                    +{{ assignment_days|get_item:day|length|add:"-2" }} more
+                                                </small>
+                                            {% endif %}
+                                        {% endif %}
+
+                                        <!-- Task Events -->
+                                        {% if day in task_days %}
+                                            {% for task in task_days|get_item:day|slice:":2" %}
+                                                <div class="event task-event"
+                                                    title="{{ task.title }}">
+                                                    ✅ {{ task.title|truncatechars:14 }}
+                                                </div>
+                                            {% endfor %}
+
+                                            {% if task_days|get_item:day|length > 2 %}
+                                                <small class="more-events text-success">
+                                                    +{{ task_days|get_item:day|length|add:"-2" }} more
+                                                </small>
+                                            {% endif %}
+                                        {% endif %}
+
+                                </td>
+
+                                {% endif %}
+
+                            {% endfor %}
+
+                            </tr>
+
+                        {% endfor %}
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- ================= Sidebar ================= -->
+
+        <div class="col-lg-4">
+
+            <!-- Upcoming Assignments -->
+
+            <div class="card shadow rounded-4 border-0 mb-4">
+
+                <div class="card-header bg-warning">
+                    <h6 class="mb-0">📝 Upcoming Assignments</h6>
+                </div>
+
+                <div class="card-body">
+
+                    {% if upcoming_assignments %}
+
+                        {% for assignment in upcoming_assignments %}
+
+                        <div class="deadline-card">
+
+                            <strong>{{ assignment.title }}</strong>
+
+                            <br>
+
+                            <small>{{ assignment.room.name }}</small>
+
+                            <br>
+
+                            <span class="badge bg-danger mt-2">
+
+                                {{ assignment.due_date|date:"d M Y" }}
+
+                            </span>
+
+                        </div>
+
+                        {% endfor %}
+
+                    {% else %}
+
+                        <p class="text-muted text-center">
+                            No upcoming assignments.
+                        </p>
+
+                    {% endif %}
+
+                </div>
+
+            </div>
+
+            <!-- Upcoming Tasks -->
+
+            <div class="card shadow rounded-4 border-0">
+
+                <div class="card-header bg-success text-white">
+                    <h6 class="mb-0">✅ Upcoming Tasks</h6>
+                </div>
+
+                <div class="card-body">
+
+                    {% if upcoming_tasks %}
+
+                        {% for task in upcoming_tasks %}
+
+                        <div class="deadline-card">
+
+                            <strong>{{ task.title }}</strong>
+
+                            <br>
+
+                            <small>{{ task.category }}</small>
+
+                            <br>
+
+                            <span class="badge bg-success mt-2">
+
+                                {{ task.due_date|date:"d M Y" }}
+
+                            </span>
+
+                        </div>
+
+                        {% endfor %}
+
+                    {% else %}
+
+                        <p class="text-muted text-center">
+                            No upcoming tasks.
+                        </p>
+
+                    {% endif %}
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- ================= Legend ================= -->
+
+    <div class="card shadow rounded-4 border-0 mt-4">
+
+        <div class="card-header bg-info text-white">
+            <h6 class="mb-0">🎯 Calendar Legend</h6>
+        </div>
+
+        <div class="card-body">
+
+            <div class="row text-center">
+
+                <div class="col-md-4">
+                    <span class="badge bg-danger p-2">
+                        📚 Assignment Deadline
+                    </span>
+                </div>
+
+                <div class="col-md-4">
+                    <span class="badge bg-success p-2">
+                        ✅ Personal Task
+                    </span>
+                </div>
+
+                <div class="col-md-4">
+                    <span class="badge bg-primary p-2">
+                        🔵 Today
+                    </span>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

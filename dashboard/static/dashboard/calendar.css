@@ -1,0 +1,159 @@
+/* ==========================================
+   STUDYHUB CALENDAR - DAY 34
+========================================== */
+
+body{
+    background:#f4f7fc;
+}
+
+/* ===== Header ===== */
+
+.calendar-header{
+    background:linear-gradient(135deg,#2563eb,#7c3aed);
+    color:white;
+}
+
+.calendar-header h2{
+    font-weight:700;
+}
+
+.calendar-header p{
+    opacity:.9;
+    font-size:1rem;
+}
+
+/* ===== Calendar Card ===== */
+
+.calendar-table{
+    table-layout:fixed;
+}
+
+.calendar-table th{
+    background:#eef2ff;
+    color:#2563eb;
+    font-weight:700;
+}
+
+.calendar-table td{
+    height:95px;
+    vertical-align:top;
+    position:relative;
+    background:white;
+    transition:.3s;
+    cursor:pointer;
+}
+
+.calendar-table td:hover{
+    background:#eff6ff;
+}
+
+.empty-day{
+    background:#f8fafc !important;
+}
+
+/* ===== Day Number ===== */
+
+.day-number{
+    font-weight:700;
+    font-size:1rem;
+    color:#334155;
+    margin-bottom:8px;
+}
+
+/* ===== Today Highlight ===== */
+
+.today-cell{
+    background:#dbeafe !important;
+    border:2px solid #2563eb !important;
+}
+
+.today-cell .day-number{
+    color:#1d4ed8;
+    font-size:1.1rem;
+}
+
+/* ===== Event Badges ===== */
+
+.event{
+    font-size:11px;
+    color:white;
+    border-radius:8px;
+    padding:2px 6px;
+    margin-bottom:4px;
+    display:inline-block;
+    width:100%;
+    text-align:center;
+}
+
+.assignment-event{
+    background:#ef4444;
+}
+
+.task-event{
+    background:#16a34a;
+}
+
+/* ===== Sidebar Deadline Cards ===== */
+
+.deadline-card{
+    background:#f8fafc;
+    border-left:5px solid #2563eb;
+    border-radius:12px;
+    padding:12px;
+    margin-bottom:14px;
+    transition:.3s;
+}
+
+.deadline-card:hover{
+    transform:translateX(4px);
+    background:#eef4ff;
+}
+
+.deadline-card strong{
+    color:#1e3a8a;
+}
+
+/* ===== Legend ===== */
+
+.card-header{
+    font-weight:600;
+}
+
+.badge{
+    font-size:.78rem;
+    border-radius:10px;
+}
+
+/* ===== Responsive ===== */
+
+@media(max-width:768px){
+
+    .calendar-table td{
+        height:70px;
+        padding:4px;
+    }
+
+    .event{
+        font-size:9px;
+        padding:1px 3px;
+    }
+
+    .day-number{
+        font-size:.8rem;
+    }
+
+}
+/* ===== Multiple Events ===== */
+
+.more-events{
+    display:block;
+    font-size:10px;
+    font-weight:600;
+    margin-top:2px;
+}
+
+.event{
+    overflow:hidden;
+    white-space:nowrap;
+    text-overflow:ellipsis;
+}

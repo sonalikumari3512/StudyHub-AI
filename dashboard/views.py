@@ -5,7 +5,9 @@ from django.utils import timezone
 from users.models import UserProfile
 from rooms.models import Room
 from resources.models import Resource, Assignment, Submission
-
+import calendar
+from datetime import date
+from tasks.models import Task
 
 @login_required
 def dashboard(request):
@@ -76,3 +78,58 @@ def dashboard(request):
     }
 
     return render(request, "dashboard/dashboard.html", context)
+
+
+
+@login_required
+def calendar_view(request):
+
+    today = timezone.now().date()
+
+    year = today.year
+    month = today.month
+
+    cal = calendar.monthcalendar(year, month)
+
+    # User tasks
+    tasks = Task.objects.filter(user=request.user)
+
+    # Assignments from joined rooms
+    assignments = Assignment.objects.filter(
+        room__members=request.user
+    )
+
+    # Convert to dictionaries for template lookup
+    task_days = {}
+    assignment_days = {}
+
+    for task in tasks:
+        if task.due_date.month == month and task.due_date.year == year:
+            task_days.setdefault(task.due_date.day, []).append(task)
+
+    for assignment in assignments:
+        due = assignment.due_date.date()
+
+        if due.month == month and due.year == year:
+            assignment_days.setdefault(due.day, []).append(assignment)
+
+    upcoming_tasks = tasks.filter(
+        due_date__gte=today
+    ).order_by("due_date")[:5]
+
+    upcoming_assignments = assignments.filter(
+        due_date__gte=timezone.now()
+    ).order_by("due_date")[:5]
+
+    context = {
+        "calendar": cal,
+        "today": today.day,
+        "month_name": calendar.month_name[month],
+        "year": year,
+        "task_days": task_days,
+        "assignment_days": assignment_days,
+        "upcoming_tasks": upcoming_tasks,
+        "upcoming_assignments": upcoming_assignments,
+    }
+
+    return render(request, "dashboard/calendar.html", context)
