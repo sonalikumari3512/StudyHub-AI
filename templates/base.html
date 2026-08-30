@@ -162,16 +162,27 @@
 
                 <!-- Notification Bell -->
                 <li class="nav-item notification-wrapper ms-2">
+
                     <a class="nav-link position-relative"
-                       href="#"
-                       id="notification-button">
+                    href="{% url 'notifications' %}"
+                    id="notification-button">
 
                         🔔
 
-                        <span id="notification-count"
-                              class="badge bg-danger d-none position-absolute top-0 start-100 translate-middle">
-                            0
-                        </span>
+                        {% if unread_notification_count > 0 %}
+                            <span id="notification-count"
+                                class="badge bg-danger position-absolute top-0 start-100 translate-middle">
+                                {{ unread_notification_count }}
+                            </span>
+                        {% else %}
+                            <span id="notification-count"
+                                class="badge bg-danger position-absolute top-0 start-100 translate-middle
+                                {% if not unread_count %}d-none{% endif %}">
+
+                                {{ unread_count|default:0 }}
+
+                            </span>
+                         {% endif %}
 
                     </a>
 
@@ -182,16 +193,61 @@
                         </div>
 
                         <div id="notification-list">
-                            <div class="notification-item text-muted">
-                                No notifications
-                            </div>
+
+                            {% if recent_notifications %}
+
+                                {% for notification in recent_notifications %}
+                                <div class="notification-item p-3 border-bottom">
+
+                                    <strong>
+                                        {% if notification.notification_type == "assignment" %}
+                                            📚
+                                        {% elif notification.notification_type == "resource" %}
+                                            📁
+                                        {% elif notification.notification_type == "chat" %}
+                                            💬
+                                        {% elif notification.notification_type == "grade" %}
+                                            ⭐
+                                        {% elif notification.notification_type == "announcement" %}
+                                            📢
+                                        {% elif notification.notification_type == "deadline" %}
+                                            ⏰
+                                        {% elif notification.notification_type == "room_join" %}
+                                            👤
+                                        {% else %}
+                                            🔔
+                                        {% endif %}
+
+                                        {{ notification.title }}
+                                    </strong>
+
+                                    <br>
+
+                                    <small>{{ notification.message }}</small>
+
+                                </div>
+                                {% endfor %}
+
+                            {% else %}
+
+                                <div class="notification-item text-muted p-3">
+                                    No notifications
+                                </div>
+
+                            {% endif %}
+
+                        </div>
+
+                        <div class="p-2 border-top text-center">
+                            <a href="{% url 'notifications' %}"
+                            class="text-decoration-none fw-semibold">
+                                View all notifications →
+                            </a>
                         </div>
 
                     </div>
+
                 </li>
-
-
-             
             <!-- Welcome User -->
             <li class="nav-item">
 
@@ -343,202 +399,191 @@
 
 {% if user.is_authenticated %}
 
-
 <script>
-
 
 // =====================================
 // NOTIFICATION SOCKET
 // =====================================
 
-
-const notificationProtocol =
-window.location.protocol === "https:"
-? "wss://"
-: "ws://";
-
-const notificationSocket = new WebSocket(
-
-    `${notificationProtocol}${window.location.host}/ws/notifications/`
-
-);
+let notificationCount =
+    parseInt(
+        document.getElementById("notification-count")?.innerText
+    ) || 0;
 
 
+// =====================================
+// ADD NOTIFICATION TO DROPDOWN
+// =====================================
 
-let notificationCount = 0;
+function addNotification(data) {
 
+    const list =
+        document.getElementById("notification-list");
 
-
-
-
-notificationSocket.onmessage = function(e){
-
-
-    const data = JSON.parse(e.data);
-
+    if (!list) return;
 
 
-    if(data.type === "notification"){
-
-
-        addNotification(data);
-
-
-        increaseNotificationCount();
-
-
-    }
-
-
-};
-
-
-
-
-
-
-function addNotification(data){
-
-
-    const list = document.getElementById(
-        "notification-list"
-    );
-
-
-
-    if(
-        list.innerText.includes(
-            "No notifications"
-        )
-    ){
-
+    if (
+        list.innerText.includes("No notifications")
+    ) {
         list.innerHTML = "";
-
     }
 
 
-
-    const item = document.createElement(
-        "div"
-    );
+    const item =
+        document.createElement("div");
 
 
     item.className =
-    "notification-item";
-
+        "notification-item p-3 border-bottom";
 
 
     item.innerHTML = `
-
-
-        <b>${data.username}</b>
-
+        <b>${data.username || "New notification"}</b>
         <br>
-
-        ${data.message}
-
-
+        ${data.message || ""}
     `;
 
 
-
     list.prepend(item);
-
-
-
 }
 
 
+// =====================================
+// INCREASE NOTIFICATION COUNT
+// =====================================
 
-
-
-
-function increaseNotificationCount(){
-
+function increaseNotificationCount() {
 
     notificationCount++;
 
 
-
     const badge =
-    document.getElementById(
-        "notification-count"
-    );
+        document.getElementById("notification-count");
 
+
+    if (!badge) return;
 
 
     badge.innerHTML =
-    notificationCount;
+        notificationCount;
 
 
-
-    badge.classList.remove(
-        "d-none"
-    );
-
-
+    badge.classList.remove("d-none");
 }
 
 
+// =====================================
+// NOTIFICATION WEBSOCKET
+// =====================================
+
+const notificationProtocol =
+    window.location.protocol === "https:"
+        ? "wss://"
+        : "ws://";
 
 
-
-
-
-document
-.getElementById(
-    "notification-button"
-)
-.onclick = function(e){
-
-
-    e.preventDefault();
-
-
-
-    const box =
-    document.getElementById(
-        "notification-box"
+const notificationSocket =
+    new WebSocket(
+        notificationProtocol +
+        window.location.host +
+        "/ws/notifications/"
     );
 
 
+notificationSocket.onopen = function () {
 
-    if(
-        box.style.display === "block"
-    ){
-
-        box.style.display = "none";
-
-
-    }
-
-    else{
-
-
-        box.style.display = "block";
-
-
-        notificationCount = 0;
-
-
-
-        document
-        .getElementById(
-            "notification-count"
-        )
-        .classList.add(
-            "d-none"
-        );
-
-
-    }
-
+    console.log(
+        "🔔 Notification WebSocket connected"
+    );
 
 };
 
 
+notificationSocket.onmessage = function(event) {
+
+    const data =
+        JSON.parse(event.data);
+
+
+    console.log(
+        "🔔 New notification:",
+        data
+    );
+
+
+    addNotification(data);
+
+    increaseNotificationCount();
+
+};
+
+
+notificationSocket.onclose = function() {
+
+    console.log(
+        "🔔 Notification WebSocket disconnected"
+    );
+
+};
+
+
+notificationSocket.onerror = function(error) {
+
+    console.error(
+        "🔔 Notification WebSocket error:",
+        error
+    );
+
+};
+
+
+// =====================================
+// NOTIFICATION BUTTON
+// =====================================
+
+const notificationButton =
+    document.getElementById(
+        "notification-button"
+    );
+
+
+if (notificationButton) {
+
+    notificationButton.onclick =
+        function(e) {
+
+            e.preventDefault();
+
+
+            const box =
+                document.getElementById(
+                    "notification-box"
+                );
+
+
+            if (!box) return;
+
+
+            if (
+                box.style.display === "block"
+            ) {
+
+                box.style.display = "none";
+
+            }
+            else {
+
+                box.style.display = "block";
+
+            }
+
+        };
+
+}
 
 </script>
+
 
 
 {% endif %}

@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+{% block content %}
+
+<link rel="stylesheet"
+      href="{% static 'users/notifications.css' %}">
+
+<div class="container py-4">
+
+```
+<!-- HEADER -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+
+    <div>
+        <h2 class="fw-bold mb-1">
+            🔔 Notifications
+        </h2>
+
+        <p class="text-muted mb-0">
+            Stay updated with your StudyHub activities
+        </p>
+    </div>
+
+    {% if unread_count > 0 %}
+
+    <a href="{% url 'mark_all_notifications_read' %}"
+       class="btn btn-outline-primary rounded-pill">
+
+        ✓ Mark all as read
+
+    </a>
+
+    {% endif %}
+
+</div>
+
+
+<!-- NOTIFICATIONS -->
+
+<div class="card shadow-sm border-0 rounded-4">
+
+    <div class="card-body p-0">
+
+        {% if notification_list %}
+
+            {% for notification in notification_list %}
+
+            <div class="
+                notification-item
+                d-flex
+                align-items-start
+                p-4
+                border-bottom
+                {% if not notification.is_read %}
+                    unread
+                {% endif %}
+            ">
+
+                <!-- ICON -->
+
+                <div class="notification-icon">
+
+                    {% if notification.notification_type == "assignment" %}
+
+                        📚
+
+                    {% elif notification.notification_type == "resource" %}
+
+                        📁
+
+                    {% elif notification.notification_type == "chat" %}
+
+                        💬
+
+                    {% elif notification.notification_type == "task" %}
+
+                        ⏰
+
+                    {% elif notification.notification_type == "deadline" %}
+
+                        ⏰
+
+                    {% elif notification.notification_type == "grade" %}
+
+                        ⭐
+
+                    {% elif notification.notification_type == "announcement" %}
+
+                        📢
+
+                    {% elif notification.notification_type == "room" %}
+
+                        👥
+
+                    {% else %}
+
+                        🔔
+
+                    {% endif %}
+
+                </div>
+
+
+                <!-- CONTENT -->
+
+                <div class="ms-3 flex-grow-1">
+
+                    <h6 class="fw-bold mb-1">
+
+                        {{ notification.title }}
+
+                    </h6>
+
+                    <p class="text-muted mb-1">
+
+                        {{ notification.message }}
+
+                    </p>
+
+                    <small class="text-muted">
+
+                        {{ notification.created_at|timesince }} ago
+
+                    </small>
+
+                </div>
+
+
+                <!-- ACTION -->
+
+                {% if not notification.is_read %}
+
+                <a href="{% url 'mark_notification_read' notification.id %}"
+                   class="btn btn-sm btn-outline-secondary rounded-pill">
+
+                    Mark read
+
+                </a>
+
+                {% else %}
+
+                <span class="text-muted small">
+
+                    ✓ Read
+
+                </span>
+
+                {% endif %}
+
+            </div>
+
+            {% endfor %}
+
+        {% else %}
+
+            <!-- EMPTY STATE -->
+
+            <div class="text-center p-5">
+
+                <div style="font-size: 50px;">
+
+                    🔔
+
+                </div>
+
+                <h5 class="fw-bold mt-3">
+
+                    No notifications
+
+                </h5>
+
+                <p class="text-muted">
+
+                    You're all caught up!
+
+                </p>
+
+            </div>
+
+        {% endif %}
+
+    </div>
+
+</div>
+```
+
+</div>
+
+{% endblock %}

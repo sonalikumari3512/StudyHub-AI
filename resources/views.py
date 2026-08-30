@@ -3,29 +3,68 @@ from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from django.contrib import messages
 from rooms.models import Room
-
+from users.models import Notification
 from .models import Resource, Assignment, Submission
 from .forms import ResourceForm, AssignmentForm, SubmissionForm,GradeSubmissionForm
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
+from django.contrib.auth.models import User
+
 
 @login_required
 def upload_resource(request):
 
     if request.method == "POST":
 
-        form = ResourceForm(request.POST, request.FILES)
+        form = ResourceForm(
+            request.POST,
+            request.FILES
+        )
 
         if form.is_valid():
 
             resource = form.save(commit=False)
-
             resource.uploaded_by = request.user
-
             resource.save()
+
+            # ==========================================
+            # RESOURCE NOTIFICATIONS
+            # ==========================================
+
+            # Notify all users except uploader
+            members = User.objects.exclude(
+                id=request.user.id
+            )
+
+            channel_layer = get_channel_layer()
+
+            for member in members:
+
+                # 1️⃣ Save notification in database
+                Notification.objects.create(
+                    user=member,
+                    title="📁 New Resource",
+                    message=f"{request.user.username} uploaded '{resource.title}'.",
+                    notification_type="resource",
+                    link="/resources/",
+                )
+
+                # 2️⃣ Send real-time notification
+                async_to_sync(
+                    channel_layer.group_send
+                )(
+                    f"user_{member.id}_notifications",
+                    {
+                        "type": "send_notification",
+                        "username": request.user.username,
+                        "title": "📁 New Resource",
+                        "message": f"{request.user.username} uploaded '{resource.title}'.",
+                    }
+                )
 
             return redirect("resource_list")
 
     else:
-
         form = ResourceForm()
 
     return render(
@@ -35,7 +74,6 @@ def upload_resource(request):
             "form": form
         }
     )
-
 
 @login_required
 def resource_list(request):
@@ -106,10 +144,8 @@ def assignment_list(request, room_id):
             "assignments": assignments,
         }
     )
-
 @login_required
 def create_assignment(request, room_id):
-
     room = get_object_or_404(Room, id=room_id)
 
     if request.user != room.host:
@@ -117,25 +153,57 @@ def create_assignment(request, room_id):
         return redirect("assignment_list", room.id)
 
     if request.method == "POST":
-
         form = AssignmentForm(
             request.POST,
             request.FILES
         )
 
         if form.is_valid():
-
             assignment = form.save(commit=False)
-
             assignment.room = room
-
             assignment.created_by = request.user
-
             assignment.save()
-            messages.success(request, "Assignment created successfully!")
+
+            # ==========================================
+            # ASSIGNMENT NOTIFICATIONS
+            # ==========================================
+
+            members = room.members.exclude(id=request.user.id)
+
+            # Get channel layer for real-time notifications
+            channel_layer = get_channel_layer()
+
+            for member in members:
+
+                # 1️⃣ Save notification in database
+                Notification.objects.create(
+                    user=member,
+                    title="📚 New Assignment",
+                    message=f"{request.user.username} posted '{assignment.title}' in {room.name}.",
+                    notification_type="assignment",
+                    link=f"/rooms/{room.id}/assignments/",
+                )
+
+                # 2️⃣ Send real-time notification
+                async_to_sync(channel_layer.group_send)(
+                    f"user_{member.id}_notifications",
+                    {
+                        "type": "send_notification",
+                        "username": request.user.username,
+                        "title": "📚 New Assignment",
+                        "message": f"{request.user.username} posted '{assignment.title}' in {room.name}.",
+                        "room_id": room.id,
+                    }
+                )
+
+            messages.success(
+                request,
+                "Assignment created successfully!"
+            )
+
             return redirect(
                 "assignment_list",
-                room_id = room.id
+                room_id=room.id
             )
 
     else:
@@ -252,8 +320,10 @@ def view_submissions(request, assignment_id):
         }
     )
 
+
 @login_required
 def grade_submission(request, submission_id):
+
     submission = get_object_or_404(
         Submission,
         id=submission_id
@@ -261,23 +331,80 @@ def grade_submission(request, submission_id):
 
     room = submission.assignment.room
 
-    # Only Host Can Grade
+    # ==========================================
+    # ONLY HOST CAN GRADE
+    # ==========================================
+
     if request.user != room.host:
-        messages.error(request, "Only host can grade submissions.")
-        return redirect("assignment_detail", submission.assignment.id)
+        messages.error(
+            request,
+            "Only host can grade submissions."
+        )
+
+        return redirect(
+            "assignment_detail",
+            submission.assignment.id
+        )
 
     if request.method == "POST":
+
         form = GradeSubmissionForm(
             request.POST,
             instance=submission
         )
 
         if form.is_valid():
+
+            # ==========================================
+            # SAVE GRADE
+            # ==========================================
+
             graded = form.save(commit=False)
             graded.status = "Graded"
             graded.save()
 
-            messages.success(request, "Submission graded successfully.")
+            # ==========================================
+            # ⭐ ASSIGNMENT GRADED NOTIFICATION
+            # ==========================================
+
+            student = submission.student
+            assignment = submission.assignment
+
+            notification_message = (
+                f"{request.user.username} graded your "
+                f"assignment '{assignment.title}' "
+                f"in {room.name}."
+            )
+
+            # 1️⃣ Save notification in database
+            Notification.objects.create(
+                user=student,
+                title="⭐ Assignment Graded",
+                message=notification_message,
+                notification_type="grade",
+                link=f"/rooms/{room.id}/assignments/",
+            )
+
+            # 2️⃣ Send real-time notification
+            channel_layer = get_channel_layer()
+
+            async_to_sync(
+                channel_layer.group_send
+            )(
+                f"user_{student.id}_notifications",
+                {
+                    "type": "send_notification",
+                    "username": request.user.username,
+                    "title": "⭐ Assignment Graded",
+                    "message": notification_message,
+                    "room_id": room.id,
+                }
+            )
+
+            messages.success(
+                request,
+                "Submission graded successfully."
+            )
 
             return redirect(
                 "view_submissions",
@@ -285,7 +412,10 @@ def grade_submission(request, submission_id):
             )
 
     else:
-        form = GradeSubmissionForm(instance=submission)
+
+        form = GradeSubmissionForm(
+            instance=submission
+        )
 
     return render(
         request,
@@ -295,3 +425,4 @@ def grade_submission(request, submission_id):
             "form": form,
         }
     )
+

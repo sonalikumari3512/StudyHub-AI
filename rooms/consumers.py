@@ -7,7 +7,7 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 
 from .models import Room, Message
-from users.models import UserProfile
+from users.models import UserProfile,Notification
 
 
 class ChatConsumer(AsyncWebsocketConsumer):
@@ -549,41 +549,51 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
 
     # ==========================================
+    # SAVE CHAT NOTIFICATION
+    # ==========================================
+
+    @database_sync_to_async
+    def save_chat_notification(self, receiver, room, message):
+
+        Notification.objects.create(
+            user=receiver,
+            title=f"New message in {room.name}",
+            message=f"{self.user.username}: {message.body}",
+            notification_type="chat",
+            link=f"/rooms/{room.id}/"
+        )
+
+    # ==========================================
     # SEND NOTIFICATIONS
     # ==========================================
 
     async def send_notifications(self, message):
 
         room = await database_sync_to_async(
-
             lambda: Room.objects.get(id=self.room_id)
-
         )()
 
         members = await database_sync_to_async(
-
             lambda: list(room.members.exclude(id=self.user.id))
-
         )()
 
         for member in members:
 
+            # 1. Save notification in database
+            await self.save_chat_notification(
+                member,
+                room,
+                message
+            )
+
+            # 2. Send real-time notification
             await self.channel_layer.group_send(
-
                 f"user_{member.id}_notifications",
-
                 {
-
                     "type": "send_notification",
-
                     "username": self.user.username,
-
                     "title": room.name,
-
                     "message": message.body,
-
                     "room_id": self.room_id,
-
                 }
-
             )

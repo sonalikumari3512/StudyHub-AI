@@ -6,6 +6,9 @@ from .models import Room,Message,Topic,Announcement
 from .forms import RoomForm, MessageForm,AnnouncementForm
 from django.db.models import Q
 from django.contrib import messages
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
+from users.models import Notification
 
 
 @login_required
@@ -91,17 +94,69 @@ def room_detail(request, pk):
     )
 
 
+
 @login_required
 def join_room(request, pk):
 
-    room = get_object_or_404(Room, id=pk)
+    room = get_object_or_404(
+        Room,
+        id=pk
+    )
 
     if request.method == "POST":
 
-        if not room.members.filter(id=request.user.id).exists():
+        # Check if user is already a member
+        if not room.members.filter(
+            id=request.user.id
+        ).exists():
+
+            # ==========================================
+            # ADD STUDENT TO ROOM
+            # ==========================================
+
             room.members.add(request.user)
 
-    return redirect("room_detail", pk=pk)
+            # ==========================================
+            # 👥 JOIN ROOM NOTIFICATION
+            # ==========================================
+
+            host = room.host
+
+            notification_message = (
+                f"{request.user.username} joined "
+                f"your room '{room.name}'."
+            )
+
+            # 1️⃣ Save notification in database
+            Notification.objects.create(
+                user=host,
+                title="👥 New Member Joined",
+                message=notification_message,
+                notification_type="room_join",
+                link=f"/rooms/{room.id}/",
+            )
+
+            # 2️⃣ Send real-time notification
+            channel_layer = get_channel_layer()
+
+            async_to_sync(
+                channel_layer.group_send
+            )(
+                f"user_{host.id}_notifications",
+                {
+                    "type": "send_notification",
+                    "username": request.user.username,
+                    "title": "👥 New Member Joined",
+                    "message": notification_message,
+                    "room_id": room.id,
+                }
+            )
+
+    return redirect(
+        "room_detail",
+        pk=pk
+    )
+
 
 
 @login_required
@@ -196,31 +251,97 @@ def room_messages(request, room_id):
 
     return JsonResponse(messages, safe=False)
 
+
 @login_required
 def create_announcement(request, room_id):
 
-    room = get_object_or_404(Room, id=room_id)
+    room = get_object_or_404(
+        Room,
+        id=room_id
+    )
+
+    # ==========================================
+    # ONLY HOST CAN CREATE ANNOUNCEMENT
+    # ==========================================
 
     if request.user != room.host:
-        messages.error(request, "Only host can create announcements.")
-        return redirect("room_detail", room.id)
+
+        messages.error(
+            request,
+            "Only host can create announcements."
+        )
+
+        return redirect(
+            "room_detail",
+            room.id
+        )
 
     if request.method == "POST":
 
-        form = AnnouncementForm(request.POST, request.FILES)
+        form = AnnouncementForm(
+            request.POST,
+            request.FILES
+        )
 
         if form.is_valid():
 
-            announcement = form.save(commit=False)
+            announcement = form.save(
+                commit=False
+            )
 
             announcement.room = room
             announcement.author = request.user
-
             announcement.save()
 
-            messages.success(request, "Announcement posted successfully.")
+            # ==========================================
+            # 📢 ANNOUNCEMENT NOTIFICATIONS
+            # ==========================================
 
-            return redirect("room_detail", room.id)
+            members = room.members.exclude(
+                id=request.user.id
+            )
+
+            channel_layer = get_channel_layer()
+
+            for member in members:
+
+                notification_message = (
+                    f"{request.user.username} posted "
+                    f"an announcement in {room.name}."
+                )
+
+                # 1️⃣ Save notification in database
+                Notification.objects.create(
+                    user=member,
+                    title="📢 New Announcement",
+                    message=notification_message,
+                    notification_type="announcement",
+                    link=f"/rooms/{room.id}/",
+                )
+
+                # 2️⃣ Send real-time notification
+                async_to_sync(
+                    channel_layer.group_send
+                )(
+                    f"user_{member.id}_notifications",
+                    {
+                        "type": "send_notification",
+                        "username": request.user.username,
+                        "title": "📢 New Announcement",
+                        "message": notification_message,
+                        "room_id": room.id,
+                    }
+                )
+
+            messages.success(
+                request,
+                "Announcement posted successfully."
+            )
+
+            return redirect(
+                "room_detail",
+                room.id
+            )
 
     else:
 
