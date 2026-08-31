@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponseForbidden,JsonResponse
+from django.http import HttpResponseForbidden,JsonResponse,Http404
 
 from .models import Room,Message,Topic,Announcement
 from .forms import RoomForm, MessageForm,AnnouncementForm
@@ -9,7 +9,7 @@ from django.contrib import messages
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 from users.models import Notification
-
+from resources.models import Resource
 
 @login_required
 def createRoom(request):
@@ -411,3 +411,4 @@ def delete_announcement(request, pk):
     messages.success(request, "Announcement deleted.")
 
     return redirect("room_detail", room.id)
+

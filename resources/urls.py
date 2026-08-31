@@ -20,12 +20,14 @@ urlpatterns = [
         views.download_resource,
         name="download_resource"
     ),
+    path("preview/<int:pk>/",views.preview_resource,name="preview_resource"),
      # Assignments
     path("room/<int:room_id>/assignments/", views.assignment_list, name="assignment_list"),
     path("room/<int:room_id>/assignments/create/", views.create_assignment, name="create_assignment"),
 
     # Assignment Detail
     path("assignment/<int:pk>/", views.assignment_detail, name="assignment_detail"),
+    path("assignment/<int:pk>/preview/",views.preview_assignment_file,name="preview_assignment_file"),
 
     # Student Submission
     path("assignment/<int:assignment_id>/submit/", views.submit_assignment, name="submit_assignment"),
@@ -34,4 +36,5 @@ urlpatterns = [
     path("assignment/<int:assignment_id>/submissions/", views.view_submissions, name="view_submissions"),
     path(
     "submission/<int:submission_id>/grade/",views.grade_submission,name="grade_submission"),
+    path("submission/<int:pk>/preview/",views.preview_submission_file, name="preview_submission_file",),
 ]

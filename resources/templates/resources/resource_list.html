@@ -5,56 +5,44 @@
 <div class="container py-5">
 
     <!-- HEADER -->
-
     <div class="d-flex justify-content-between align-items-center mb-4">
-
         <div>
-
-            <h2 class="fw-bold">
+            <h2 class="fw-bold mb-1">
                 📚 Study Resources
             </h2>
 
             <p class="text-muted mb-0">
                 Find useful study materials shared by students.
             </p>
-
         </div>
 
-        <a
-            href="{% url 'upload_resource' %}"
-            class="btn btn-primary">
-
+        <a href="{% url 'upload_resource' %}"
+           class="btn btn-primary rounded-pill px-4">
             📤 Upload Resource
-
         </a>
-
     </div>
 
 
     <!-- SEARCH -->
-
     <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body p-4">
 
-        <div class="card-body">
+            <form method="GET" class="row g-2">
 
-            <form
-                method="GET"
-                class="row g-2">
-
+                <!-- Search Input -->
                 <div class="col-md-7">
-
                     <input
                         type="text"
                         name="search"
                         value="{{ search }}"
                         class="form-control"
-                        placeholder="🔍 Search resources...">
-
+                        placeholder="🔍 Search resources..."
+                    >
                 </div>
 
 
+                <!-- Category -->
                 <div class="col-md-3">
-
                     <select
                         name="category"
                         class="form-select">
@@ -69,39 +57,33 @@
                                 value="{{ value }}"
                                 {% if selected_category == value %}
                                     selected
-                                {% endif %}>
-
+                                {% endif %}
+                            >
                                 {{ label }}
-
                             </option>
 
                         {% endfor %}
 
                     </select>
-
                 </div>
 
 
+                <!-- Search Button -->
                 <div class="col-md-2">
-
                     <button
+                        type="submit"
                         class="btn btn-dark w-100">
-
                         🔍 Search
-
                     </button>
-
                 </div>
 
             </form>
 
         </div>
-
     </div>
 
 
     <!-- RESOURCE CARDS -->
-
     <div class="row g-4">
 
         {% for resource in resources %}
@@ -110,33 +92,30 @@
 
                 <div class="card h-100 border-0 shadow-sm rounded-4">
 
-                    <div class="card-body p-4">
+                    <div class="card-body p-4 d-flex flex-column">
 
-                        <div class="d-flex justify-content-between">
+                        <!-- CATEGORY + DOWNLOAD COUNT -->
+                        <div class="d-flex justify-content-between align-items-center">
 
                             <span class="badge bg-primary-subtle text-primary">
-
                                 {{ resource.category }}
-
                             </span>
 
                             <span class="text-muted small">
-
                                 ⬇ {{ resource.downloads }}
-
                             </span>
 
                         </div>
 
 
+                        <!-- TITLE -->
                         <h5 class="fw-bold mt-3">
-
                             {{ resource.title }}
-
                         </h5>
 
 
-                        <p class="text-muted">
+                        <!-- DESCRIPTION -->
+                        <p class="text-muted mb-3">
 
                             {% if resource.description %}
 
@@ -151,7 +130,8 @@
                         </p>
 
 
-                        <div class="small text-muted mb-3">
+                        <!-- UPLOADED INFO -->
+                        <div class="small text-muted mb-4">
 
                             👤 {{ resource.uploaded_by.username }}
 
@@ -162,13 +142,27 @@
                         </div>
 
 
-                        <a
-                            href="{% url 'download_resource' resource.id %}"
-                            class="btn btn-outline-primary w-100">
+                        <!-- BUTTONS -->
+                        <div class="d-flex gap-2 mt-auto">
 
-                            ⬇️ Download
+                            <!-- PREVIEW -->
+                            <a
+                                href="{% url 'preview_resource' resource.id %}"
+                                class="btn btn-outline-primary rounded-pill flex-fill"
+                            >
+                                👁 Preview
+                            </a>
 
-                        </a>
+
+                            <!-- DOWNLOAD -->
+                            <a
+                                href="{% url 'download_resource' resource.id %}"
+                                class="btn btn-primary rounded-pill flex-fill"
+                            >
+                                ⬇️ Download
+                            </a>
+
+                        </div>
 
                     </div>
 
@@ -178,19 +172,31 @@
 
         {% empty %}
 
-            <div class="text-center py-5">
+            <!-- EMPTY STATE -->
+            <div class="col-12">
 
-                <div style="font-size: 60px;">
-                    📚
+                <div class="text-center py-5">
+
+                    <div style="font-size: 60px;">
+                        📚
+                    </div>
+
+                    <h4 class="mt-3">
+                        No resources found
+                    </h4>
+
+                    <p class="text-muted">
+                        Try another search or upload the first resource.
+                    </p>
+
+                    <a
+                        href="{% url 'upload_resource' %}"
+                        class="btn btn-primary rounded-pill px-4"
+                    >
+                        📤 Upload Resource
+                    </a>
+
                 </div>
-
-                <h4 class="mt-3">
-                    No resources found
-                </h4>
-
-                <p class="text-muted">
-                    Try another search or upload the first resource.
-                </p>
 
             </div>
 
@@ -201,3 +207,4 @@
 </div>
 
 {% endblock %}
+

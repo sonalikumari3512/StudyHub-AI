@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'resources/file_preview.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<div class="container py-4">
+
+    <div class="card shadow-lg border-0 rounded-4">
+
+        <div class="card-header bg-warning text-dark">
+            <h3 class="mb-0">
+                📄 {{ resource.title }}
+            </h3>
+
+            {% if is_assignment %}
+                <small>Assignment Attachment</small>
+            {% elif is_submission %}
+                <small>My Submission</small>
+            {% else %}
+                <small>{{ resource.category }}</small>
+            {% endif %}
+        </div>
+
+
+        <div class="card-body">
+
+            {% if file_type == "pdf" %}
+
+                <embed
+                src="{{ file_url }}"
+                type="application/pdf"
+                width="100%"
+                height="700px"
+                style="border-radius: 14px;">
+
+
+            {% elif file_type == "image" %}
+
+                <div class="text-center">
+                    <img
+                        src="{{ file_url }}"
+                        alt="{{ resource.title }}"
+                        style="max-width: 100%; max-height: 700px;">
+                </div>
+
+
+            {% elif file_type == "text" %}
+
+                <pre style="white-space: pre-wrap;">{{ content }}</pre>
+
+
+            {% else %}
+
+                <div class="text-center py-5">
+
+                    <div style="font-size: 60px;">
+                        📦
+                    </div>
+
+                    <h4>
+                        Preview not available
+                    </h4>
+
+                    <p class="text-muted">
+                        This file type cannot be previewed.
+                    </p>
+
+                    <a href="{{ file_url }}"
+                       class="btn btn-primary rounded-pill"
+                       download>
+                        ⬇ Download File
+                    </a>
+
+                </div>
+
+            {% endif %}
+
+
+            <div class="mt-4">
+
+                {% if is_assignment %}
+
+                    <a href="{% url 'assignment_detail' resource.id %}"
+                       class="btn btn-outline-secondary rounded-pill">
+                        ← Back to Assignment
+                    </a>
+
+                {% elif is_submission %}
+
+                    <a href="{% url 'assignment_detail' resource.assignment.id %}"
+                       class="btn btn-outline-secondary rounded-pill">
+                        ← Back to Assignment
+                    </a>
+
+                {% else %}
+
+                    <a href="{% url 'resource_list' %}"
+                       class="btn btn-outline-secondary rounded-pill">
+                        ← Back to Resources
+                    </a>
+
+                {% endif %}
+
+
+                <a href="{{ file_url }}"
+                   class="btn btn-primary rounded-pill"
+                   download>
+                    ⬇ Download
+                </a>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}
+

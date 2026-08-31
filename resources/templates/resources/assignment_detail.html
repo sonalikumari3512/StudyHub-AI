@@ -37,15 +37,23 @@
             <p><strong>🎯 Total Marks:</strong> {{ assignment.total_marks }}</p>
 
             {% if assignment.assignment_file %}
+            <div class="d-flex gap-2 mt-3 flex-wrap">
 
-                <a href="{{ assignment.assignment_file.url }}"
-                   class="btn btn-primary"
-                   target="_blank">
-                    📄 View Assignment File
+                <!-- Preview -->
+                <a href="{% url 'preview_assignment_file' assignment.id %}"
+                class="btn btn-outline-primary rounded-pill">
+                    👁 Preview File
                 </a>
 
-            {% endif %}
+                <!-- Download -->
+                <a href="{{ assignment.assignment_file.url }}"
+                class="btn btn-primary rounded-pill"
+                download>
+                    ⬇ Download File
+                </a>
 
+            </div>
+        {% endif %}
         </div>
 
     </div>
@@ -72,11 +80,20 @@
                         Submitted on: {{ submission.submitted_at }}
                     </p>
 
-                    <a href="{{ submission.submitted_file.url }}"
-                    target="_blank"
-                    class="btn btn-success btn-sm">
-                        📄 View My Submission
+                    <div class="d-flex gap-2 flex-wrap">
+
+                    <a href="{% url 'preview_submission_file' submission.id %}"
+                    class="btn btn-outline-success btn-sm rounded-pill">
+                        👁 Preview My Submission
                     </a>
+
+                    <a href="{{ submission.submitted_file.url }}"
+                    class="btn btn-success btn-sm rounded-pill"
+                    download>
+                        ⬇ Download My Submission
+                    </a>
+
+                </div>
 
                 </div>
 

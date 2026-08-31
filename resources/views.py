@@ -2,27 +2,33 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from django.contrib import messages
-from rooms.models import Room
-from users.models import Notification
-from .models import Resource, Assignment, Submission
-from .forms import ResourceForm, AssignmentForm, SubmissionForm,GradeSubmissionForm
+from django.http import FileResponse, Http404
+
+from django.contrib.auth.models import User
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
-from django.contrib.auth.models import User
+
+from rooms.models import Room
+from users.models import Notification
+
+from .models import Resource, Assignment, Submission
+from .forms import (
+    ResourceForm,
+    AssignmentForm,
+    SubmissionForm,
+    GradeSubmissionForm,
+)
 
 
 @login_required
 def upload_resource(request):
-
     if request.method == "POST":
-
         form = ResourceForm(
             request.POST,
             request.FILES
         )
 
         if form.is_valid():
-
             resource = form.save(commit=False)
             resource.uploaded_by = request.user
             resource.save()
@@ -75,23 +81,20 @@ def upload_resource(request):
         }
     )
 
+
 @login_required
 def resource_list(request):
-
     resources = Resource.objects.all().order_by("-created_at")
 
     search = request.GET.get("search", "").strip()
-
     category = request.GET.get("category", "").strip()
 
     if search:
-
         resources = resources.filter(
             title__icontains=search
         )
 
     if category:
-
         resources = resources.filter(
             category=category
         )
@@ -110,29 +113,82 @@ def resource_list(request):
     )
 
 
-
 @login_required
 def download_resource(request, pk):
-
     resource = get_object_or_404(
         Resource,
         id=pk
     )
 
+    # Check if file exists
+    if not resource.file:
+        raise Http404("File not found.")
+
+    # Increase download count
     resource.downloads += 1
+    resource.save(update_fields=["downloads"])
 
-    resource.save(
-        update_fields=["downloads"]
+    # Force file download
+    response = FileResponse(
+        resource.file.open("rb"),
+        as_attachment=True,
+        filename=resource.file.name.split("/")[-1]
     )
 
-    return redirect(
-        resource.file.url
+    return response
+
+
+@login_required
+def preview_resource(request, pk):
+    resource = get_object_or_404(
+        Resource,
+        id=pk
     )
+
+    if not resource.file:
+        messages.error(
+            request,
+            "No file available for preview."
+        )
+        return redirect("resource_list")
+
+    file_name = resource.file.name.lower()
+
+    # PDF
+    if file_name.endswith(".pdf"):
+        file_type = "pdf"
+
+    # Images
+    elif file_name.endswith(
+        (".jpg", ".jpeg", ".png", ".gif", ".webp")
+    ):
+        file_type = "image"
+
+    # Text
+    elif file_name.endswith(".txt"):
+        file_type = "text"
+
+    # Unsupported
+    else:
+        file_type = "unsupported"
+
+    return render(
+        request,
+        "resources/file_preview.html",
+        {
+            "resource": resource,
+            "file_type": file_type,
+            "file_url": resource.file.url,
+        }
+    )
+
 
 @login_required
 def assignment_list(request, room_id):
-
-    room = get_object_or_404(Room, id=room_id)
+    room = get_object_or_404(
+        Room,
+        id=room_id
+    )
 
     assignments = room.assignments.all().order_by("-created_at")
 
@@ -144,13 +200,24 @@ def assignment_list(request, room_id):
             "assignments": assignments,
         }
     )
+
+
 @login_required
 def create_assignment(request, room_id):
-    room = get_object_or_404(Room, id=room_id)
+    room = get_object_or_404(
+        Room,
+        id=room_id
+    )
 
     if request.user != room.host:
-        messages.error(request, "Only room host can create assignments.")
-        return redirect("assignment_list", room.id)
+        messages.error(
+            request,
+            "Only room host can create assignments."
+        )
+        return redirect(
+            "assignment_list",
+            room.id
+        )
 
     if request.method == "POST":
         form = AssignmentForm(
@@ -168,9 +235,10 @@ def create_assignment(request, room_id):
             # ASSIGNMENT NOTIFICATIONS
             # ==========================================
 
-            members = room.members.exclude(id=request.user.id)
+            members = room.members.exclude(
+                id=request.user.id
+            )
 
-            # Get channel layer for real-time notifications
             channel_layer = get_channel_layer()
 
             for member in members:
@@ -185,7 +253,9 @@ def create_assignment(request, room_id):
                 )
 
                 # 2️⃣ Send real-time notification
-                async_to_sync(channel_layer.group_send)(
+                async_to_sync(
+                    channel_layer.group_send
+                )(
                     f"user_{member.id}_notifications",
                     {
                         "type": "send_notification",
@@ -218,9 +288,9 @@ def create_assignment(request, room_id):
         }
     )
 
+
 @login_required
 def assignment_detail(request, pk):
-
     assignment = get_object_or_404(
         Assignment,
         id=pk
@@ -242,8 +312,52 @@ def assignment_detail(request, pk):
 
 
 @login_required
-def submit_assignment(request, assignment_id):
+def preview_assignment_file(request, pk):
+    assignment = get_object_or_404(
+        Assignment,
+        id=pk
+    )
 
+    if not assignment.assignment_file:
+        messages.error(
+            request,
+            "No file available for preview."
+        )
+        return redirect(
+            "assignment_detail",
+            pk=assignment.id
+        )
+
+    file_name = assignment.assignment_file.name.lower()
+
+    if file_name.endswith(".pdf"):
+        file_type = "pdf"
+
+    elif file_name.endswith(
+        (".jpg", ".jpeg", ".png", ".gif", ".webp")
+    ):
+        file_type = "image"
+
+    elif file_name.endswith(".txt"):
+        file_type = "text"
+
+    else:
+        file_type = "unsupported"
+
+    return render(
+        request,
+        "resources/assignment_file_preview.html",
+        {
+            "assignment": assignment,
+            "file_type": file_type,
+            "file_url": assignment.assignment_file.url,
+        }
+    )
+
+
+
+@login_required
+def submit_assignment(request, assignment_id):
     assignment = get_object_or_404(
         Assignment,
         id=assignment_id
@@ -251,21 +365,28 @@ def submit_assignment(request, assignment_id):
 
     # Host cannot submit
     if request.user == assignment.created_by:
-        return redirect("assignment_detail", pk=assignment.id)
+        return redirect(
+            "assignment_detail",
+            pk=assignment.id
+        )
 
     # Prevent duplicate submission
     if Submission.objects.filter(
         assignment=assignment,
         student=request.user
     ).exists():
-        return redirect("assignment_detail", pk=assignment.id)
+        return redirect(
+            "assignment_detail",
+            pk=assignment.id
+        )
 
     if request.method == "POST":
-
-        form = SubmissionForm(request.POST, request.FILES)
+        form = SubmissionForm(
+            request.POST,
+            request.FILES
+        )
 
         if form.is_valid():
-
             submission = form.save(commit=False)
 
             submission.assignment = assignment
@@ -280,7 +401,10 @@ def submit_assignment(request, assignment_id):
 
             submission.save()
 
-            return redirect("assignment_detail", pk=assignment.id)
+            return redirect(
+                "assignment_detail",
+                pk=assignment.id
+            )
 
     else:
         form = SubmissionForm()
@@ -297,7 +421,6 @@ def submit_assignment(request, assignment_id):
 
 @login_required
 def view_submissions(request, assignment_id):
-
     assignment = get_object_or_404(
         Assignment,
         id=assignment_id
@@ -305,7 +428,10 @@ def view_submissions(request, assignment_id):
 
     # Only room host can see submissions
     if request.user != assignment.created_by:
-        return redirect("assignment_detail", pk=assignment.id)
+        return redirect(
+            "assignment_detail",
+            pk=assignment.id
+        )
 
     submissions = Submission.objects.filter(
         assignment=assignment
@@ -323,7 +449,6 @@ def view_submissions(request, assignment_id):
 
 @login_required
 def grade_submission(request, submission_id):
-
     submission = get_object_or_404(
         Submission,
         id=submission_id
@@ -347,7 +472,6 @@ def grade_submission(request, submission_id):
         )
 
     if request.method == "POST":
-
         form = GradeSubmissionForm(
             request.POST,
             instance=submission
@@ -412,7 +536,6 @@ def grade_submission(request, submission_id):
             )
 
     else:
-
         form = GradeSubmissionForm(
             instance=submission
         )
@@ -424,5 +547,66 @@ def grade_submission(request, submission_id):
             "submission": submission,
             "form": form,
         }
+    )
+
+
+@login_required
+def preview_submission_file(request, pk):
+    submission = get_object_or_404(
+        Submission,
+        id=pk
+    )
+
+    # Only the student who submitted or the room host can preview it
+    if (
+        request.user != submission.student
+        and request.user != submission.assignment.created_by
+    ):
+        messages.error(
+            request,
+            "You don't have permission to preview this file."
+        )
+
+        return redirect(
+            "assignment_detail",
+            pk=submission.assignment.id
+        )
+
+    if not submission.submitted_file:
+        messages.error(
+            request,
+            "No submission file available."
+        )
+
+        return redirect(
+            "assignment_detail",
+            pk=submission.assignment.id
+        )
+
+    file_name = submission.submitted_file.name.lower()
+
+    if file_name.endswith(".pdf"):
+        file_type = "pdf"
+
+    elif file_name.endswith(
+        (".jpg", ".jpeg", ".png", ".gif", ".webp")
+    ):
+        file_type = "image"
+
+    elif file_name.endswith(".txt"):
+        file_type = "text"
+
+    else:
+        file_type = "unsupported"
+
+    return render(
+        request,
+        "resources/file_preview.html",
+        {
+            "resource": submission,
+            "file_type": file_type,
+            "is_submission": True,
+            "file_url": submission.submitted_file.url,
+        },
     )
 
