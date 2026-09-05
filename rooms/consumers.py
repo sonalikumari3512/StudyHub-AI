@@ -597,3 +597,9 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     "room_id": self.room_id,
                 }
             )
+
+
+
+
+
+

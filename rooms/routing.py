@@ -3,6 +3,7 @@ from django.urls import path
 from .consumers import ChatConsumer
 
 from .notification_consumer import NotificationConsumer
+from .video_consumer import VideoConsumer
 
 websocket_urlpatterns = [
 
@@ -19,6 +20,9 @@ websocket_urlpatterns = [
         NotificationConsumer.as_asgi()
     ),
 
-
+    path(
+        "ws/video/<int:room_id>/",
+        VideoConsumer.as_asgi()
+    ),
 
 ]

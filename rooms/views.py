@@ -412,3 +412,21 @@ def delete_announcement(request, pk):
 
     return redirect("room_detail", room.id)
 
+
+
+@login_required
+def video_room(request, room_id):
+    room = get_object_or_404(Room, id=room_id)
+
+    # Only members can join
+    if request.user not in room.members.all() and request.user != room.host:
+        messages.error(request, "You are not a member of this room.")
+        return redirect("room_list")
+
+    return render(
+        request,
+        "rooms/video_room.html",
+        {
+            "room": room,
+        }
+    )

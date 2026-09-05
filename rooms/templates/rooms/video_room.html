@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% load static %}
+
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'rooms/css/video_room.css' %}">
+
+<div class="video-room-container">
+
+    <!-- Top Bar -->
+    <div class="video-header">
+        <div>
+            <h3>🎥 {{ room.name }} Study Room</h3>
+            <p>Live Video Session</p>
+        </div>
+
+        <a href="{% url 'room_detail' room.id %}"
+           class="leave-btn">
+            Leave Room
+        </a>
+    </div>
+
+    <!-- Video Area -->
+    <div class="video-grid">
+
+        <!-- Your Video -->
+        <div class="video-card">
+            <video
+                id="localVideo"
+                autoplay
+                playsinline
+                muted>
+            </video>
+
+            <div class="video-name">
+                You ({{ request.user.username }})
+            </div>
+        </div>
+
+        <!-- Remote User Video -->
+        <div class="video-card">
+            <video
+                id="remoteVideo"
+                autoplay
+                playsinline>
+            </video>
+
+            <div class="video-name">
+                Remote User
+            </div>
+        </div>
+
+   </div>
+    <!-- Controls -->
+    <div class="video-controls">
+      <button id="cameraBtn" class="control-btn" type="button" onclick="toggleCamera()">
+         📹 Camera On
+      </button>
+
+      <button id="micBtn" class="control-btn" type="button" onclick="toggleMicrophone()">
+        🎤 Mic On
+       </button>
+  </div>
+
+</div>
+
+<script>
+    window.chatConfig = {
+        roomId: {{ room.id }},
+        currentUserId: {{ request.user.id }}
+    };
+</script>
+
+<script src="{% static 'rooms/js/video_room.js' %}"></script>
+
+{% endblock %}

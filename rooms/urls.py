@@ -28,4 +28,9 @@ urlpatterns = [
         views.delete_announcement,
         name="delete_announcement",
     ),
+    path(
+        "<int:room_id>/video/",
+        views.video_room,
+        name="video_room"
+    ),
 ]
