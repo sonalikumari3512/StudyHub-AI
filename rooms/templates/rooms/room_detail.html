@@ -57,6 +57,14 @@
                             📚 Upload Resource
                         </a>
                     </div>
+                     
+                    <div class = "mb-2">
+                       <a href="{% url 'video_room' room.id %}"
+                        class="btn btn-danger rounded-pill ms-2">
+                            🎥 Join Video Call
+                        </a>
+                    </div>
+                    
 
                     {% if is_member %}
 

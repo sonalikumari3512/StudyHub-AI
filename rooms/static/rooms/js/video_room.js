@@ -1,44 +1,45 @@
 
-// ============================================================
-// VIDEO ROOM - WEBRTC
+/// ============================================================
+// VIDEO ROOM - WEBRTC (MULTI-PEER)
 // ============================================================
 
 const roomId = window.chatConfig.roomId;
 const currentUserId = window.chatConfig.currentUserId;
+const currentUsername = window.chatConfig.currentUsername;
 
-const localVideo = document.getElementById("localVideo");
-const remoteVideo = document.getElementById("remoteVideo");
+const videoGrid = document.getElementById("videoGrid");
 const cameraBtn = document.getElementById("cameraBtn");
 const micBtn = document.getElementById("micBtn");
 
 let localStream = new MediaStream();
-let remoteStream = new MediaStream();
-
-let peerConnection = null;
 let videoSocket = null;
 
-let pendingCandidates = [];
+// Map<peerId, RTCPeerConnection>
+const peerConnections = new Map();
 
-// let cameraOn = true;
+// Map<peerId, MediaStream>
+const remoteStreams = new Map();
+
+// Map<peerId, { candidates: [] }>  -- ICE candidates that arrive before remoteDescription is set
+const pendingCandidates = new Map();
+
+
 // ============================================================
 // START CAMERA
 // ============================================================
 
 async function startCamera() {
     try {
-        const stream = await navigator.mediaDevices.getUserMedia({
+        localStream = await navigator.mediaDevices.getUserMedia({
             video: true,
             audio: true
         });
 
-        localStream = stream;
+        addLocalVideoTile();
 
-        localVideo.srcObject = localStream;
-
-        // Initial button state
         const videoTrack = localStream.getVideoTracks()[0];
         const audioTrack = localStream.getAudioTracks()[0];
-         
+
         if (videoTrack) {
             videoTrack.enabled = true;
             cameraBtn.textContent = "📹 Camera On";
@@ -49,33 +50,81 @@ async function startCamera() {
             micBtn.textContent = "🎤 Mic On";
         }
 
-
         console.log("📹 Local camera started");
-        console.log("🎤 Local microphone started");
 
     } catch (error) {
+        console.warn("⚠️ Camera/mic unavailable, joining audio/video-less:", error);
 
-        console.warn(
-            "⚠️ Local camera unavailable:",
-            error
-        );
+        try {
+            // Fall back to audio-only so the user can still join
+            localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        } catch (audioError) {
+            console.warn("⚠️ No audio either, joining with no media:", audioError);
+            localStream = new MediaStream();
+        }
 
-        // This can happen when another browser
-        // is already using the physical camera.
-        localStream = new MediaStream();
-
-        localVideo.srcObject = null;
-
-        console.log(
-            "📷 Continuing without local camera"
-        );
-
-        // Disable buttons if there is no local stream
+        addLocalVideoTile();
         cameraBtn.textContent = "🚫 Camera Off";
-        micBtn.textContent = "🔇 Mic Off";
+        micBtn.textContent = localStream.getAudioTracks().length ? "🎤 Mic On" : "🔇 Mic Off";
     }
 
     connectSignaling();
+}
+
+
+// ============================================================
+// VIDEO TILE HELPERS
+// ============================================================
+
+function addLocalVideoTile() {
+    const card = document.createElement("div");
+    card.className = "video-card";
+    card.id = "tile-local";
+
+    const video = document.createElement("video");
+    video.id = "localVideo";
+    video.autoplay = true;
+    video.playsInline = true;
+    video.muted = true; // never play back your own audio
+    video.srcObject = localStream;
+
+    const label = document.createElement("div");
+    label.className = "video-name";
+    label.textContent = `You (${currentUsername})`;
+
+    card.appendChild(video);
+    card.appendChild(label);
+    videoGrid.appendChild(card);
+}
+
+function addRemoteVideoTile(peerId, username) {
+    if (document.getElementById(`tile-${peerId}`)) {
+        return; // already exists
+    }
+
+    const card = document.createElement("div");
+    card.className = "video-card";
+    card.id = `tile-${peerId}`;
+
+    const video = document.createElement("video");
+    video.id = `video-${peerId}`;
+    video.autoplay = true;
+    video.playsInline = true;
+
+    const label = document.createElement("div");
+    label.className = "video-name";
+    label.textContent = username || "Participant";
+
+    card.appendChild(video);
+    card.appendChild(label);
+    videoGrid.appendChild(card);
+}
+
+function removeRemoteVideoTile(peerId) {
+    const card = document.getElementById(`tile-${peerId}`);
+    if (card) {
+        card.remove();
+    }
 }
 
 
@@ -84,700 +133,307 @@ async function startCamera() {
 // ============================================================
 
 function connectSignaling() {
+    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const socketUrl = `${protocol}//${window.location.host}/ws/video/${roomId}/`;
 
-    const protocol =
-        window.location.protocol === "https:"
-            ? "wss:"
-            : "ws:";
-
-    const socketUrl =
-        `${protocol}//${window.location.host}/ws/video/${roomId}/`;
-
-    console.log(
-        "🔌 Connecting video WebSocket:",
-        socketUrl
-    );
+    console.log("🔌 Connecting video WebSocket:", socketUrl);
 
     videoSocket = new WebSocket(socketUrl);
 
-
     videoSocket.onopen = function () {
-
-        console.log(
-            "✅ Video WebSocket connected"
-        );
-
+        console.log("✅ Video WebSocket connected");
     };
-
 
     videoSocket.onmessage = async function (event) {
-
         const data = JSON.parse(event.data);
+        console.log("📨 Video signal:", data);
 
-        console.log(
-            "📨 Video signal:",
-            data
-        );
+        switch (data.type) {
 
+            case "room_users":
+                // Roster of everyone already in the room.
+                // We initiate offers to each of them.
+                for (const peer of data.users) {
+                    addRemoteVideoTile(peer.user_id, peer.username);
+                    await createOfferTo(peer.user_id);
+                }
+                break;
 
-        // ====================================================
-        // USER JOINED
-        // ====================================================
+            case "user_joined":
+                console.log("👤 User joined:", data.username);
+                addRemoteVideoTile(data.user_id, data.username);
+                // We DON'T create an offer here — the new joiner
+                // will send us one (they got our ID via room_users).
+                break;
 
-        
+            case "offer":
+                await handleOffer(data.offer, data.sender_id);
+                break;
 
-        if (data.type === "user_joined") {
+            case "answer":
+                await handleAnswer(data.answer, data.sender_id);
+                break;
 
-            console.log(
-                "👤 User joined:",
-                data.username
-            );
+            case "ice_candidate":
+                await handleIceCandidate(data.candidate, data.sender_id);
+                break;
 
-            const hasCamera =
-                localStream &&
-                localStream.getVideoTracks().length > 0;
-
-            if (hasCamera) {
-
-                console.log(
-                    "📹 I have camera → creating offer"
-                );
-
-                await createOffer();
-
-            } else {
-
-                console.log(
-                    "📷 No camera → waiting for offer"
-                );
-            }
+            case "user_left":
+                console.log("👋 User left:", data.username);
+                closePeerConnection(data.user_id);
+                removeRemoteVideoTile(data.user_id);
+                break;
         }
-
-
-        // ====================================================
-        // OFFER
-        // ====================================================
-
-        else if (data.type === "offer") {
-
-            console.log(
-                "📥 Offer received"
-            );
-
-            await handleOffer(data.offer);
-
-        }
-
-
-        // ====================================================
-        // ANSWER
-        // ====================================================
-
-        else if (data.type === "answer") {
-
-            console.log(
-                "📥 Answer received"
-            );
-
-            await handleAnswer(data.answer);
-
-        }
-
-
-        // ====================================================
-        // ICE
-        // ====================================================
-
-        else if (data.type === "ice_candidate") {
-
-            await handleIceCandidate(
-                data.candidate
-            );
-
-        }
-
-
-        // ====================================================
-        // USER LEFT
-        // ====================================================
-
-        else if (data.type === "user_left") {
-
-            console.log(
-                "👋 User left"
-            );
-
-            closePeerConnection();
-
-        }
-
     };
-
 
     videoSocket.onerror = function (error) {
-
-        console.error(
-            "❌ Video WebSocket error:",
-            error
-        );
-
+        console.error("❌ Video WebSocket error:", error);
     };
-
 
     videoSocket.onclose = function () {
-
-        console.log(
-            "🔌 Video WebSocket disconnected"
-        );
-
+        console.log("🔌 Video WebSocket disconnected");
     };
 }
 
 
 // ============================================================
-// CREATE PEER CONNECTION
+// PEER CONNECTION (per peer)
 // ============================================================
 
-function createPeerConnection() {
-
-    if (peerConnection) {
-
-        return peerConnection;
-
+function getOrCreatePeerConnection(peerId) {
+    if (peerConnections.has(peerId)) {
+        return peerConnections.get(peerId);
     }
 
+    console.log("🔗 Creating peer connection for:", peerId);
 
-    console.log(
-        "🔗 Creating peer connection"
-    );
-
-
-    peerConnection = new RTCPeerConnection({
-
-        iceServers: [
-            {
-                urls: "stun:stun.l.google.com:19302"
-            }
-        ]
-
+    const pc = new RTCPeerConnection({
+        iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
     });
 
+    remoteStreams.set(peerId, new MediaStream());
+    pendingCandidates.set(peerId, []);
 
-    // ========================================================
-    // CREATE REMOTE STREAM
-    // ========================================================
-
-    remoteStream = new MediaStream();
-
-    remoteVideo.srcObject = remoteStream;
-
-
-    // ========================================================
-    // ADD LOCAL TRACKS
-    // ========================================================
-
-    localStream.getTracks().forEach(function (track) {
-
-        console.log(
-            "➕ Adding local track:",
-            track.kind
-        );
-
-        peerConnection.addTrack(
-            track,
-            localStream
-        );
-
+    // Add our local tracks
+    localStream.getTracks().forEach(track => {
+        pc.addTrack(track, localStream);
     });
 
+    pc.ontrack = function (event) {
+        console.log("🎥 Remote track received from", peerId, ":", event.track.kind);
 
-    // ========================================================
-    // REMOTE TRACK
-    // ========================================================
+        const remoteStream = remoteStreams.get(peerId);
 
-    peerConnection.ontrack = function (event) {
-
-        console.log(
-            "🎥 Remote track received:",
-            event.track.kind
+        const alreadyExists = remoteStream.getTracks().some(
+            t => t.id === event.track.id
         );
-
-
-        /*
-         * IMPORTANT:
-         *
-         * Don't replace remoteVideo.srcObject with
-         * event.streams[0].
-         *
-         * Instead, add the received track to our own
-         * remote MediaStream.
-         */
-
-        const alreadyExists =
-            remoteStream
-                .getTracks()
-                .some(
-                    track => track.id === event.track.id
-                );
-
 
         if (!alreadyExists) {
-
-            remoteStream.addTrack(
-                event.track
-            );
-
+            remoteStream.addTrack(event.track);
         }
 
-
-        remoteVideo.srcObject = remoteStream;
-
-
-        // Make sure the video is visible
-
-        remoteVideo.autoplay = true;
-        remoteVideo.playsInline = true;
-
-
-        remoteVideo.play()
-            .then(function () {
-
-                console.log(
-                    "▶️ Remote video playing"
-                );
-
-            })
-            .catch(function (error) {
-
-                console.log(
-                    "⚠️ Remote video play:",
-                    error
-                );
-
-            });
-
-
-        console.log(
-            "✅ Remote stream assigned"
-        );
-
+        const videoEl = document.getElementById(`video-${peerId}`);
+        if (videoEl) {
+            videoEl.srcObject = remoteStream;
+            videoEl.onloadedmetadata = async () => {
+                try {
+                    await videoEl.play();
+                } catch (err) {
+                    console.error("❌ Remote video play failed:", err);
+                }
+            };
+        }
     };
 
-
-    // ========================================================
-    // ICE CANDIDATE
-    // ========================================================
-
-    peerConnection.onicecandidate = function (event) {
-
-        if (
-            event.candidate &&
-            videoSocket &&
-            videoSocket.readyState === WebSocket.OPEN
-        ) {
-
-            videoSocket.send(
-                JSON.stringify({
-
-                    type: "ice_candidate",
-
-                    candidate: event.candidate
-
-                })
-            );
-
+    pc.onicecandidate = function (event) {
+        if (event.candidate && videoSocket && videoSocket.readyState === WebSocket.OPEN) {
+            videoSocket.send(JSON.stringify({
+                type: "ice_candidate",
+                candidate: event.candidate,
+                target_id: peerId,
+            }));
         }
-
     };
 
+    pc.oniceconnectionstatechange = function () {
+        console.log(`🧊 ICE connection [${peerId}]:`, pc.iceConnectionState);
+    };
 
-    // ========================================================
-    // ICE CONNECTION
-    // ========================================================
+    pc.onconnectionstatechange = function () {
+        console.log(`🔗 WebRTC connection [${peerId}]:`, pc.connectionState);
+    };
 
-    peerConnection.oniceconnectionstatechange =
-        function () {
-
-            console.log(
-                "🧊 ICE connection:",
-                peerConnection.iceConnectionState
-            );
-
-        };
-
-
-    // ========================================================
-    // WEBRTC CONNECTION
-    // ========================================================
-
-    peerConnection.onconnectionstatechange =
-        function () {
-
-            console.log(
-                "🔗 WebRTC connection:",
-                peerConnection.connectionState
-            );
-
-        };
-
-
-    return peerConnection;
+    peerConnections.set(peerId, pc);
+    return pc;
 }
 
 
 // ============================================================
-// CREATE OFFER
+// OFFER / ANSWER / ICE
 // ============================================================
 
-async function createOffer() {
-
+async function createOfferTo(peerId) {
     try {
+        const pc = getOrCreatePeerConnection(peerId);
 
-        const pc =
-            createPeerConnection();
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
 
+        videoSocket.send(JSON.stringify({
+            type: "offer",
+            offer: pc.localDescription,
+            target_id: peerId,
+        }));
 
-        console.log(
-            "📤 Creating offer"
-        );
-
-
-        const offer =
-            await pc.createOffer();
-
-
-        await pc.setLocalDescription(
-            offer
-        );
-
-
-        console.log(
-            "📤 Sending offer"
-        );
-
-
-        videoSocket.send(
-            JSON.stringify({
-
-                type: "offer",
-
-                offer: pc.localDescription
-
-            })
-        );
+        console.log("📤 Offer sent to", peerId);
 
     } catch (error) {
-
-        console.error(
-            "❌ Create offer error:",
-            error
-        );
-
+        console.error("❌ Create offer error:", error);
     }
 }
 
-
-// ============================================================
-// HANDLE OFFER
-// ============================================================
-
-async function handleOffer(offer) {
-
+async function handleOffer(offer, senderId) {
     try {
+        addRemoteVideoTile(senderId); // ensure tile exists even if user_joined hasn't arrived yet
+        const pc = getOrCreatePeerConnection(senderId);
 
-        const pc =
-            createPeerConnection();
+        await pc.setRemoteDescription(new RTCSessionDescription(offer));
 
-
-        console.log(
-            "📥 Setting remote offer"
-        );
-
-
-        await pc.setRemoteDescription(
-            new RTCSessionDescription(offer)
-        );
-
-
-        // Add candidates that arrived early
-
-        for (
-            const candidate of pendingCandidates
-        ) {
-
+        const queued = pendingCandidates.get(senderId) || [];
+        for (const candidate of queued) {
             try {
-
-                await pc.addIceCandidate(
-                    candidate
-                );
-
+                await pc.addIceCandidate(candidate);
             } catch (error) {
-
-                console.warn(
-                    "⚠️ Pending ICE error:",
-                    error
-                );
-
+                console.warn("⚠️ Pending ICE error:", error);
             }
-
         }
+        pendingCandidates.set(senderId, []);
 
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
 
-        pendingCandidates = [];
+        videoSocket.send(JSON.stringify({
+            type: "answer",
+            answer: pc.localDescription,
+            target_id: senderId,
+        }));
 
-
-        // Create answer
-
-        const answer =
-            await pc.createAnswer();
-
-
-        await pc.setLocalDescription(
-            answer
-        );
-
-
-        videoSocket.send(
-            JSON.stringify({
-
-                type: "answer",
-
-                answer: pc.localDescription
-
-            })
-        );
-
-
-        console.log(
-            "📤 Answer sent"
-        );
+        console.log("📤 Answer sent to", senderId);
 
     } catch (error) {
-
-        console.error(
-            "❌ Handle offer error:",
-            error
-        );
-
+        console.error("❌ Handle offer error:", error);
     }
 }
 
-
-// ============================================================
-// HANDLE ANSWER
-// ============================================================
-
-async function handleAnswer(answer) {
-
+async function handleAnswer(answer, senderId) {
     try {
+        const pc = peerConnections.get(senderId);
+        if (!pc) return;
 
-        if (!peerConnection) {
+        await pc.setRemoteDescription(new RTCSessionDescription(answer));
 
-            return;
-
-        }
-
-
-        await peerConnection.setRemoteDescription(
-            new RTCSessionDescription(answer)
-        );
-
-
-        // Add candidates that arrived early
-
-        for (
-            const candidate of pendingCandidates
-        ) {
-
+        const queued = pendingCandidates.get(senderId) || [];
+        for (const candidate of queued) {
             try {
-
-                await peerConnection.addIceCandidate(
-                    candidate
-                );
-
+                await pc.addIceCandidate(candidate);
             } catch (error) {
-
-                console.warn(
-                    "⚠️ ICE error:",
-                    error
-                );
-
+                console.warn("⚠️ ICE error:", error);
             }
-
         }
+        pendingCandidates.set(senderId, []);
 
-
-        pendingCandidates = [];
-
-
-        console.log(
-            "✅ Answer applied"
-        );
+        console.log("✅ Answer applied from", senderId);
 
     } catch (error) {
-
-        console.error(
-            "❌ Handle answer error:",
-            error
-        );
-
+        console.error("❌ Handle answer error:", error);
     }
 }
 
-
-// ============================================================
-// HANDLE ICE
-// ============================================================
-
-async function handleIceCandidate(candidate) {
-
+async function handleIceCandidate(candidate, senderId) {
     try {
+        const iceCandidate = new RTCIceCandidate(candidate);
+        const pc = peerConnections.get(senderId);
 
-        const iceCandidate =
-            new RTCIceCandidate(candidate);
-
-
-        if (
-            !peerConnection ||
-            !peerConnection.remoteDescription
-        ) {
-
-            pendingCandidates.push(
-                iceCandidate
-            );
-
+        if (!pc || !pc.remoteDescription) {
+            const queue = pendingCandidates.get(senderId) || [];
+            queue.push(iceCandidate);
+            pendingCandidates.set(senderId, queue);
             return;
-
         }
 
-
-        await peerConnection.addIceCandidate(
-            iceCandidate
-        );
+        await pc.addIceCandidate(iceCandidate);
 
     } catch (error) {
-
-        console.error(
-            "❌ ICE candidate error:",
-            error
-        );
-
+        console.error("❌ ICE candidate error:", error);
     }
 }
 
 
 // ============================================================
-// CLOSE CONNECTION
+// CLOSE / CLEANUP
 // ============================================================
 
-function closePeerConnection() {
-
-    if (peerConnection) {
-
-        peerConnection.close();
-
-        peerConnection = null;
-
+function closePeerConnection(peerId) {
+    const pc = peerConnections.get(peerId);
+    if (pc) {
+        pc.close();
+        peerConnections.delete(peerId);
     }
-
-
-    remoteStream =
-        new MediaStream();
-
-    remoteVideo.srcObject =
-        remoteStream;
-
+    remoteStreams.delete(peerId);
+    pendingCandidates.delete(peerId);
 }
 
+
 // ============================================================
-// CAMERA TOGGLE
+// CAMERA / MIC TOGGLE
 // ============================================================
-async function toggleCamera() {
-    const videoTracks = localStream.getVideoTracks();
 
-    // CAMERA OFF
-    if (videoTracks.length > 0) {
-        const track = videoTracks[0];
-        track.stop();
-        localStream.removeTrack(track);
+function toggleCamera() {
+    const videoTrack = localStream.getVideoTracks()[0];
+    if (!videoTrack) return;
 
-        const sender =
-            peerConnection &&
-            peerConnection.getSenders().find(
-                s => s.track && s.track.kind === "video"
-            );
-
-        if (sender) {
-            await sender.replaceTrack(null);
-        }
-
-        localVideo.srcObject = null;
-
-        cameraBtn.textContent = "🚫 Camera Off";   // <-- ADD THIS
-        console.log("📷 Camera OFF");
-        return;
-    }
-
-    // CAMERA ON
-    try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-        const track = stream.getVideoTracks()[0];
-
-        localStream.addTrack(track);
-        localVideo.srcObject = localStream;
-
-        const sender =
-            peerConnection &&
-            peerConnection.getSenders().find(
-                s => s.track && s.track.kind === "video"
-            );
-
-        if (sender) {
-            await sender.replaceTrack(track);
-        } else if (peerConnection) {
-            peerConnection.addTrack(track, localStream);
-        }
-
-        cameraBtn.textContent = "📹 Camera On";   // <-- ADD THIS
-        console.log("📷 Camera ON");
-    } catch (error) {
-        console.error("❌ Camera error:", error);
-    }
+    videoTrack.enabled = !videoTrack.enabled;
+    cameraBtn.textContent = videoTrack.enabled ? "📹 Camera On" : "🚫 Camera Off";
+    console.log("Camera:", videoTrack.enabled ? "ON" : "OFF");
 }
 
-// ============================================================
-// MICROPHONE TOGGLE
-// ============================================================
-async function toggleMicrophone() {
-    const audioTracks = localStream.getAudioTracks();
+function toggleMicrophone() {
+    const audioTrack = localStream.getAudioTracks()[0];
+    if (!audioTrack) return;
 
-    if (audioTracks.length > 0) {
-        audioTracks[0].enabled = !audioTracks[0].enabled;
-
-        micBtn.textContent = audioTracks[0].enabled   // <-- ADD THIS
-            ? "🎤 Mic On"
-            : "🔇 Mic Off";
-
-        console.log(audioTracks[0].enabled ? "🎤 Microphone ON" : "🎤 Microphone OFF");
-        return;
-    }
-
-    try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        const track = stream.getAudioTracks()[0];
-
-        localStream.addTrack(track);
-
-        if (peerConnection) {
-            peerConnection.addTrack(track, localStream);
-        }
-
-        micBtn.textContent = "🎤 Mic On";   // <-- ADD THIS
-        console.log("🎤 Microphone ON");
-    } catch (error) {
-        console.error("❌ Microphone error:", error);
-    }
+    audioTrack.enabled = !audioTrack.enabled;
+    micBtn.textContent = audioTrack.enabled ? "🎤 Mic On" : "🔇 Mic Off";
+    console.log("Mic:", audioTrack.enabled ? "ON" : "OFF");
 }
+
+
+// ============================================================
+// LEAVE MEETING
+// ============================================================
+
+function leaveMeeting() {
+    // Stop local camera/mic immediately (turns off camera light)
+    localStream.getTracks().forEach(track => track.stop());
+
+    // Close every peer connection cleanly
+    for (const peerId of peerConnections.keys()) {
+        closePeerConnection(peerId);
+    }
+
+    // Close the signaling socket
+    if (videoSocket) {
+        videoSocket.close();
+    }
+
+    window.location.href = window.chatConfig.roomDetailUrl;
+}
+
+window.addEventListener("beforeunload", () => {
+    localStream.getTracks().forEach(track => track.stop());
+    for (const peerId of peerConnections.keys()) {
+        closePeerConnection(peerId);
+    }
+});
 
 // ============================================================
 // START

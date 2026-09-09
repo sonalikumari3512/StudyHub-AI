@@ -14,43 +14,15 @@
             <p>Live Video Session</p>
         </div>
 
-        <a href="{% url 'room_detail' room.id %}"
-           class="leave-btn">
-            Leave Room
-        </a>
+        <button id="leaveBtn" class="leave-btn" type="button" onclick="leaveMeeting()">
+            Leave Meeting
+        </button>
     </div>
 
     <!-- Video Area -->
-    <div class="video-grid">
+    <div class="video-grid" id="videoGrid">
+    </div>
 
-        <!-- Your Video -->
-        <div class="video-card">
-            <video
-                id="localVideo"
-                autoplay
-                playsinline
-                muted>
-            </video>
-
-            <div class="video-name">
-                You ({{ request.user.username }})
-            </div>
-        </div>
-
-        <!-- Remote User Video -->
-        <div class="video-card">
-            <video
-                id="remoteVideo"
-                autoplay
-                playsinline>
-            </video>
-
-            <div class="video-name">
-                Remote User
-            </div>
-        </div>
-
-   </div>
     <!-- Controls -->
     <div class="video-controls">
       <button id="cameraBtn" class="control-btn" type="button" onclick="toggleCamera()">
@@ -67,7 +39,9 @@
 <script>
     window.chatConfig = {
         roomId: {{ room.id }},
-        currentUserId: {{ request.user.id }}
+        currentUserId: {{ request.user.id }},
+        currentUsername: "{{ request.user.username }}",
+        roomDetailUrl: "{% url 'room_detail' room.id %}"
     };
 </script>
 
