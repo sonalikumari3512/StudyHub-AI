@@ -22,7 +22,30 @@ const remoteStreams = new Map();
 
 // Map<peerId, { candidates: [] }>  -- ICE candidates that arrive before remoteDescription is set
 const pendingCandidates = new Map();
+const toastContainer = document.getElementById("toastContainer");
 
+function showParticipantToast(message, type = "joined") {
+
+    const toast = document.createElement("div");
+
+    toast.className = `toast toast-${type}`;
+    toast.textContent = message;
+
+    toastContainer.appendChild(toast);
+
+    requestAnimationFrame(() => {
+        toast.classList.add("show");
+    });
+
+    setTimeout(() => {
+
+        toast.classList.remove("show");
+
+        setTimeout(() => toast.remove(), 350);
+
+    }, 3000);
+
+}
 
 // ============================================================
 // START CAMERA
@@ -159,13 +182,6 @@ function connectSignaling() {
                 }
                 break;
 
-            case "user_joined":
-                console.log("👤 User joined:", data.username);
-                addRemoteVideoTile(data.user_id, data.username);
-                // We DON'T create an offer here — the new joiner
-                // will send us one (they got our ID via room_users).
-                break;
-
             case "offer":
                 await handleOffer(data.offer, data.sender_id);
                 break;
@@ -177,11 +193,16 @@ function connectSignaling() {
             case "ice_candidate":
                 await handleIceCandidate(data.candidate, data.sender_id);
                 break;
-
+            case "user_joined":
+                console.log("👤 User joined:", data.username);
+                addRemoteVideoTile(data.user_id, data.username);
+                showParticipantToast(`🟢 ${data.username} joined the room`, "joined");
+                break;
             case "user_left":
                 console.log("👋 User left:", data.username);
                 closePeerConnection(data.user_id);
                 removeRemoteVideoTile(data.user_id);
+                showParticipantToast(`🔴 ${data.username} left the room`, "left");
                 break;
         }
     };

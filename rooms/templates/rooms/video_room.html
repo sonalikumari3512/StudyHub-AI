@@ -1,50 +1,60 @@
-{% extends "base.html" %}
-{% load static %}
-
-
-{% block content %}
-<link rel="stylesheet" href="{% static 'rooms/css/video_room.css' %}">
+{% extends "base.html" %} {% load static %} {% block content %}
+<link rel="stylesheet" href="{% static 'rooms/css/video_room.css' %}?v={% now 'U' %}">
 
 <div class="video-room-container">
+  <!-- Toast notifications -->
+  <div id="toastContainer" class="toast-container"></div>
 
-    <!-- Top Bar -->
-    <div class="video-header">
-        <div>
-            <h3>🎥 {{ room.name }} Study Room</h3>
-            <p>Live Video Session</p>
-        </div>
-
-        <button id="leaveBtn" class="leave-btn" type="button" onclick="leaveMeeting()">
-            Leave Meeting
-        </button>
+  <!-- Top Bar -->
+  <div class="video-header">
+    <div>
+      <h3>🎥 {{ room.name }} Study Room</h3>
+      <p>Live Video Session</p>
     </div>
 
-    <!-- Video Area -->
-    <div class="video-grid" id="videoGrid">
-    </div>
-
-    <!-- Controls -->
-    <div class="video-controls">
-      <button id="cameraBtn" class="control-btn" type="button" onclick="toggleCamera()">
-         📹 Camera On
-      </button>
-
-      <button id="micBtn" class="control-btn" type="button" onclick="toggleMicrophone()">
-        🎤 Mic On
-       </button>
+    <button
+      id="leaveBtn"
+      class="leave-btn"
+      type="button"
+      onclick="leaveMeeting()"
+    >
+      Leave Meeting
+    </button>
   </div>
 
+  <!-- Video Area -->
+  <div class="video-grid" id="videoGrid"></div>
+
+  <!-- Controls -->
+  <div class="video-controls">
+    <button
+      id="cameraBtn"
+      class="control-btn"
+      type="button"
+      onclick="toggleCamera()"
+    >
+      📹 Camera On
+    </button>
+
+    <button
+      id="micBtn"
+      class="control-btn"
+      type="button"
+      onclick="toggleMicrophone()"
+    >
+      🎤 Mic On
+    </button>
+  </div>
 </div>
 
 <script>
-    window.chatConfig = {
-        roomId: {{ room.id }},
-        currentUserId: {{ request.user.id }},
-        currentUsername: "{{ request.user.username }}",
-        roomDetailUrl: "{% url 'room_detail' room.id %}"
-    };
+  window.chatConfig = {
+      roomId: {{ room.id }},
+      currentUserId: {{ request.user.id }},
+      currentUsername: "{{ request.user.username }}",
+      roomDetailUrl: "{% url 'room_detail' room.id %}"
+  };
 </script>
 
-<script src="{% static 'rooms/js/video_room.js' %}"></script>
-
+<script src="{% static 'rooms/js/video_room.js' %}?v={% now 'U' %}"></script>
 {% endblock %}
