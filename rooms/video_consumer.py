@@ -2,21 +2,52 @@ import json
 
 from channels.generic.websocket import AsyncWebsocketConsumer
 
-# Simple in-memory room tracking.
-# room_id -> { user_id: {"channel_name": ..., "username": ...} }
+
+# ============================================================
+# Active video room tracking
+#
+# room_id -> {
+#     user_id: {
+#         "channel_name": ...,
+#         "username": ...
+#     }
+# }
+# ============================================================
+
 active_rooms = {}
 
 
+# ============================================================
+# Screen sharing tracking
+#
+# room_id -> username currently presenting
+# ============================================================
+
+active_presenters = {}
+
+
 class VideoConsumer(AsyncWebsocketConsumer):
+
+    # ========================================================
+    # CONNECT
+    # ========================================================
 
     async def connect(self):
         self.user = self.scope["user"]
         self.room_id = self.scope["url_route"]["kwargs"]["room_id"]
         self.video_group_name = f"video_{self.room_id}"
 
+        # ----------------------------------------------------
+        # Reject unauthenticated users
+        # ----------------------------------------------------
+
         if not self.user.is_authenticated:
             await self.close()
             return
+
+        # ----------------------------------------------------
+        # Join video group
+        # ----------------------------------------------------
 
         await self.channel_layer.group_add(
             self.video_group_name,
@@ -25,29 +56,50 @@ class VideoConsumer(AsyncWebsocketConsumer):
 
         await self.accept()
 
-        room = active_rooms.setdefault(self.room_id, {})
+        # ----------------------------------------------------
+        # Get/create room
+        # ----------------------------------------------------
 
-        # Send the new user the list of everyone ALREADY in the room
+        room = active_rooms.setdefault(
+            self.room_id,
+            {}
+        )
+
+        # ----------------------------------------------------
+        # Send existing users to newly connected user
+        # ----------------------------------------------------
+
         existing_users = [
-            {"user_id": uid, "username": info["username"]}
+            {
+                "user_id": uid,
+                "username": info["username"]
+            }
             for uid, info in room.items()
             if uid != self.user.id
         ]
 
         await self.send(
-            text_data=json.dumps({
-                "type": "room_users",
-                "users": existing_users,
-            })
+            text_data=json.dumps(
+                {
+                    "type": "room_users",
+                    "users": existing_users,
+                }
+            )
         )
 
-        # Now register this user in the room
+        # ----------------------------------------------------
+        # Register current user
+        # ----------------------------------------------------
+
         room[self.user.id] = {
             "channel_name": self.channel_name,
             "username": self.user.username,
         }
 
-        # Tell everyone ELSE that a new user joined
+        # ----------------------------------------------------
+        # Tell everyone else that a new user joined
+        # ----------------------------------------------------
+
         await self.channel_layer.group_send(
             self.video_group_name,
             {
@@ -57,17 +109,57 @@ class VideoConsumer(AsyncWebsocketConsumer):
             }
         )
 
+    # ========================================================
+    # DISCONNECT
+    # ========================================================
+
     async def disconnect(self, close_code):
+
+        # ----------------------------------------------------
+        # Leave video group
+        # ----------------------------------------------------
+
         await self.channel_layer.group_discard(
             self.video_group_name,
             self.channel_name
         )
 
-        room = active_rooms.get(self.room_id)
+        # ----------------------------------------------------
+        # Remove user from active room
+        # ----------------------------------------------------
+
+        room = active_rooms.get(
+            self.room_id
+        )
+
         if room and self.user.id in room:
             del room[self.user.id]
+
             if not room:
                 del active_rooms[self.room_id]
+
+        # ----------------------------------------------------
+        # Release presenter lock if this user was presenting
+        # ----------------------------------------------------
+
+        if (
+            active_presenters.get(self.room_id)
+            == self.user.username
+        ):
+            del active_presenters[self.room_id]
+
+            # Tell everyone that screen sharing stopped
+            await self.channel_layer.group_send(
+                self.video_group_name,
+                {
+                    "type": "screen_share_stopped",
+                    "username": self.user.username,
+                }
+            )
+
+        # ----------------------------------------------------
+        # Tell everyone that the user left
+        # ----------------------------------------------------
 
         await self.channel_layer.group_send(
             self.video_group_name,
@@ -78,11 +170,21 @@ class VideoConsumer(AsyncWebsocketConsumer):
             }
         )
 
+    # ========================================================
+    # RECEIVE
+    # ========================================================
+
     async def receive(self, text_data):
+
         data = json.loads(text_data)
         event_type = data.get("type")
 
+        # ====================================================
+        # WEBRTC OFFER
+        # ====================================================
+
         if event_type == "offer":
+
             await self.channel_layer.group_send(
                 self.video_group_name,
                 {
@@ -93,7 +195,12 @@ class VideoConsumer(AsyncWebsocketConsumer):
                 }
             )
 
+        # ====================================================
+        # WEBRTC ANSWER
+        # ====================================================
+
         elif event_type == "answer":
+
             await self.channel_layer.group_send(
                 self.video_group_name,
                 {
@@ -104,7 +211,12 @@ class VideoConsumer(AsyncWebsocketConsumer):
                 }
             )
 
+        # ====================================================
+        # ICE CANDIDATE
+        # ====================================================
+
         elif event_type == "ice_candidate":
+
             await self.channel_layer.group_send(
                 self.video_group_name,
                 {
@@ -115,62 +227,239 @@ class VideoConsumer(AsyncWebsocketConsumer):
                 }
             )
 
+        # ====================================================
+        # SCREEN SHARE REQUEST
+        #
+        # IMPORTANT:
+        # The browser has NOT called getDisplayMedia() yet.
+        #
+        # We only check whether this user is allowed to present.
+        # ====================================================
+
+        elif event_type == "screen_share_request":
+
+            # ------------------------------------------------
+            # Someone else is already presenting
+            # ------------------------------------------------
+
+            if (
+                self.room_id in active_presenters
+                and active_presenters[self.room_id]
+                != self.user.username
+            ):
+
+                await self.send(
+                    text_data=json.dumps(
+                        {
+                            "type": "screen_share_denied",
+                            "username": active_presenters[
+                                self.room_id
+                            ],
+                        }
+                    )
+                )
+
+                return
+
+            # ------------------------------------------------
+            # Nobody else is presenting.
+            #
+            # Tell this user they are allowed to open the
+            # browser screen picker.
+            # ------------------------------------------------
+
+            await self.send(
+                text_data=json.dumps(
+                    {
+                        "type": "screen_share_allowed",
+                    }
+                )
+            )
+
+        # ====================================================
+        # SCREEN SHARE ACTUALLY STARTED
+        #
+        # This event comes AFTER the browser successfully
+        # obtains the screen stream.
+        # ====================================================
+
+        elif event_type == "screen_share_started":
+
+            # ------------------------------------------------
+            # Lock this room to this presenter
+            # ------------------------------------------------
+
+            active_presenters[
+                self.room_id
+            ] = self.user.username
+
+            # ------------------------------------------------
+            # Tell everyone that screen sharing started
+            # ------------------------------------------------
+
+            await self.channel_layer.group_send(
+                self.video_group_name,
+                {
+                    "type": "screen_share_started",
+                    "username": self.user.username,
+                }
+            )
+
+        # ====================================================
+        # SCREEN SHARE STOPPED
+        # ====================================================
+
+        elif event_type == "screen_share_stopped":
+
+            # ------------------------------------------------
+            # Only current presenter can release the lock
+            # ------------------------------------------------
+
+            if (
+                active_presenters.get(self.room_id)
+                == self.user.username
+            ):
+                del active_presenters[self.room_id]
+
+            # ------------------------------------------------
+            # Tell everyone that screen sharing stopped
+            # ------------------------------------------------
+
+            await self.channel_layer.group_send(
+                self.video_group_name,
+                {
+                    "type": "screen_share_stopped",
+                    "username": self.user.username,
+                }
+            )
+
+    # ========================================================
+    # USER JOINED
+    # ========================================================
+
     async def user_joined(self, event):
+
+        # Don't send event back to same user
         if event["user_id"] == self.user.id:
             return
 
         await self.send(
-            text_data=json.dumps({
-                "type": "user_joined",
-                "user_id": event["user_id"],
-                "username": event["username"],
-            })
+            text_data=json.dumps(
+                {
+                    "type": "user_joined",
+                    "user_id": event["user_id"],
+                    "username": event["username"],
+                }
+            )
         )
+
+    # ========================================================
+    # USER LEFT
+    # ========================================================
 
     async def user_left(self, event):
+
+        # Don't send event back to same user
         if event["user_id"] == self.user.id:
             return
 
         await self.send(
-            text_data=json.dumps({
-                "type": "user_left",
-                "user_id": event["user_id"],
-                "username": event["username"],
-            })
+            text_data=json.dumps(
+                {
+                    "type": "user_left",
+                    "user_id": event["user_id"],
+                    "username": event["username"],
+                }
+            )
         )
+
+    # ========================================================
+    # VIDEO OFFER
+    # ========================================================
 
     async def video_offer(self, event):
+
+        # Only target user receives the offer
         if event["target_id"] != self.user.id:
             return
 
         await self.send(
-            text_data=json.dumps({
-                "type": "offer",
-                "offer": event["offer"],
-                "sender_id": event["sender_id"],
-            })
+            text_data=json.dumps(
+                {
+                    "type": "offer",
+                    "offer": event["offer"],
+                    "sender_id": event["sender_id"],
+                }
+            )
         )
+
+    # ========================================================
+    # VIDEO ANSWER
+    # ========================================================
 
     async def video_answer(self, event):
+
+        # Only target user receives the answer
         if event["target_id"] != self.user.id:
             return
 
         await self.send(
-            text_data=json.dumps({
-                "type": "answer",
-                "answer": event["answer"],
-                "sender_id": event["sender_id"],
-            })
+            text_data=json.dumps(
+                {
+                    "type": "answer",
+                    "answer": event["answer"],
+                    "sender_id": event["sender_id"],
+                }
+            )
         )
+
+    # ========================================================
+    # ICE CANDIDATE
+    # ========================================================
 
     async def ice_candidate(self, event):
+
+        # Only target user receives the ICE candidate
         if event["target_id"] != self.user.id:
             return
 
         await self.send(
-            text_data=json.dumps({
-                "type": "ice_candidate",
-                "candidate": event["candidate"],
-                "sender_id": event["sender_id"],
-            })
+            text_data=json.dumps(
+                {
+                    "type": "ice_candidate",
+                    "candidate": event["candidate"],
+                    "sender_id": event["sender_id"],
+                }
+            )
         )
+
+    # ========================================================
+    # SCREEN SHARE STARTED EVENT
+    # ========================================================
+
+    async def screen_share_started(self, event):
+
+        await self.send(
+            text_data=json.dumps(
+                {
+                    "type": "screen_share_started",
+                    "username": event["username"],
+                }
+            )
+        )
+
+    # ========================================================
+    # SCREEN SHARE STOPPED EVENT
+    # ========================================================
+
+    async def screen_share_stopped(self, event):
+
+        await self.send(
+            text_data=json.dumps(
+                {
+                    "type": "screen_share_stopped",
+                    "username": event["username"],
+                }
+            )
+        )
+

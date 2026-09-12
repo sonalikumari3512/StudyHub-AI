@@ -21,6 +21,12 @@
       Leave Meeting
     </button>
   </div>
+  
+    <!-- Screen Sharing Banner -->
+    <div id="presentationBanner" class="presentation-banner" style="display:none;">
+        🖥️ <span id="presenterName"></span> is presenting
+    </div>
+
 
   <!-- Video Area -->
   <div class="video-grid" id="videoGrid"></div>
@@ -43,6 +49,13 @@
       onclick="toggleMicrophone()"
     >
       🎤 Mic On
+    </button>
+
+    <button id="screenShareBtn"
+            class="control-btn screen-btn"
+            type="button"
+            onclick="toggleScreenShare()">
+        🖥️ Share Screen
     </button>
   </div>
 </div>
