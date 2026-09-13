@@ -33,4 +33,9 @@ urlpatterns = [
         views.video_room,
         name="video_room"
     ),
+    path(
+    "<int:room_id>/attendance/",
+    views.attendance_view,
+    name="attendance_view"
+   ),
 ]

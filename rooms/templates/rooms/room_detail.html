@@ -65,7 +65,12 @@
                         </a>
                     </div>
                     
-
+                    <div class = "mb-2">
+                        <a href="{% url 'attendance_view' room.id %}"
+                            class="btn btn-success rounded-pill ms-2">
+                                📋 Attendance
+                            </a>
+                     </div>
                     {% if is_member %}
 
                     <form method="POST"

@@ -1,0 +1,220 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+
+<div class="container py-4">
+
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+
+        <div>
+            <h2 class="fw-bold mb-1">📋 Attendance Dashboard</h2>
+            <p class="text-muted mb-0">{{ room.name }}</p>
+        </div>
+
+        <a href="{% url 'room_detail' room.id %}"
+           class="btn btn-outline-primary rounded-pill">
+            ← Back to Room
+        </a>
+
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row g-3 mb-4">
+
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-4 text-center h-100">
+                <div class="card-body">
+                    <h3 class="text-success fw-bold">{{ total_present }}</h3>
+                    <p class="mb-0 text-muted">Present</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-4 text-center h-100">
+                <div class="card-body">
+                    <h3 class="text-primary fw-bold">{{ currently_in_meeting }}</h3>
+                    <p class="mb-0 text-muted">In Meeting</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-4 text-center h-100">
+                <div class="card-body">
+                    <h3 class="text-warning fw-bold">{{ completed_sessions }}</h3>
+                    <p class="mb-0 text-muted">Completed</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-4 text-center h-100">
+                <div class="card-body">
+                    <h3 class="text-info fw-bold">{{ attendance_percentage }}%</h3>
+                    <p class="mb-0 text-muted">Attendance</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Search Box -->
+    <div class="card shadow-sm border-0 rounded-4 mb-3">
+        <div class="card-body">
+            <input
+                id="attendanceSearch"
+                type="text"
+                class="form-control rounded-pill"
+                placeholder="🔍 Search student by username..."
+            >
+        </div>
+    </div>
+
+    <!-- Attendance Table -->
+    <div class="card shadow-sm border-0 rounded-4">
+
+        <div class="card-body p-0">
+
+            <div class="table-responsive">
+
+                <table class="table table-hover align-middle mb-0">
+
+                    <thead class="table-light">
+
+                        <tr>
+                            <th>Student</th>
+                            <th>Joined</th>
+                            <th>Left</th>
+                            <th>Duration</th>
+                            <th>Status</th>
+                        </tr>
+
+                    </thead>
+
+                    <tbody id="attendanceTable">
+
+                        {% for record in attendance_records %}
+
+                        <tr class="attendance-row">
+
+                            <td class="student-name fw-semibold">
+                                👤 {{ record.student.username }}
+                            </td>
+
+                            <td>
+                                {{ record.joined_at|date:"d M Y, h:i A" }}
+                            </td>
+
+                            <td>
+
+                                {% if record.left_at %}
+                                    {{ record.left_at|date:"d M Y, h:i A" }}
+                                {% else %}
+                                    <span class="badge bg-primary rounded-pill">
+                                        Live Meeting
+                                    </span>
+                                {% endif %}
+
+                            </td>
+
+                            <td>
+
+                                {% if record.left_at %}
+                                    {{ record.duration_minutes }} min
+                                {% else %}
+                                    <span class="live-duration"
+                                          data-joined="{{ record.joined_at|date:'c' }}">
+                                        Live...
+                                    </span>
+                                {% endif %}
+
+                            </td>
+
+                            <td>
+
+                                {% if record.left_at %}
+                                    <span class="badge bg-success rounded-pill">
+                                        Completed
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-warning text-dark rounded-pill">
+                                        In Meeting
+                                    </span>
+                                {% endif %}
+
+                            </td>
+
+                        </tr>
+
+                        {% empty %}
+
+                        <tr>
+
+                            <td colspan="5"
+                                class="text-center py-5 text-muted">
+                                No attendance records found.
+                            </td>
+
+                        </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+/* Search Students */
+
+const searchInput = document.getElementById("attendanceSearch");
+
+searchInput.addEventListener("keyup", function(){
+
+    const value = this.value.toLowerCase();
+
+    document.querySelectorAll(".attendance-row").forEach(row => {
+
+        const student = row.querySelector(".student-name").innerText.toLowerCase();
+
+        row.style.display = student.includes(value) ? "" : "none";
+
+    });
+
+});
+
+
+/* Live Duration Timer */
+
+function updateLiveDurations(){
+
+    document.querySelectorAll(".live-duration").forEach(element => {
+
+        const joined = new Date(element.dataset.joined);
+        const now = new Date();
+
+        const diff = Math.floor((now - joined)/60000);
+
+        element.innerText = `${diff} min`;
+
+    });
+
+}
+
+updateLiveDurations();
+
+setInterval(updateLiveDurations,60000);
+
+</script>
+
+{% endblock %}

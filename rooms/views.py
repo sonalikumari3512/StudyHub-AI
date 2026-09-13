@@ -2,9 +2,9 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseForbidden,JsonResponse,Http404
 
-from .models import Room,Message,Topic,Announcement
+from .models import Room,Message,Topic,Announcement,Attendance
 from .forms import RoomForm, MessageForm,AnnouncementForm
-from django.db.models import Q
+from django.db.models import Q,OuterRef, Subquery
 from django.contrib import messages
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
@@ -430,3 +430,65 @@ def video_room(request, room_id):
             "room": room,
         }
     )
+
+
+
+@login_required
+def attendance_view(request, room_id):
+
+    room = get_object_or_404(Room, id=room_id)
+
+    # Host only
+    if request.user != room.host:
+        messages.error(
+            request,
+            "Only the room host can view attendance."
+        )
+        return redirect("room_detail", room.id)
+
+    # Get all attendance records
+    attendance_records = Attendance.objects.filter(
+        room=room
+    ).select_related("student").order_by("-joined_at")
+
+    # Total room members
+    total_members = room.members.count() + 1  # + host
+
+    # Count unique students only
+    unique_present_students = attendance_records.values(
+        "student"
+    ).distinct().count()
+
+    total_present = unique_present_students
+
+    # Currently in meeting
+    currently_in_meeting = attendance_records.filter(
+        left_at__isnull=True
+    ).count()
+
+    # Completed sessions
+    completed_sessions = attendance_records.filter(
+        left_at__isnull=False
+    ).count()
+
+    # Attendance percentage
+    attendance_percentage = (
+        round((total_present / total_members) * 100, 1)
+        if total_members else 0
+    )
+
+    return render(
+        request,
+        "rooms/attendance.html",
+        {
+            "room": room,
+            "attendance_records": attendance_records,
+            "total_present": total_present,
+            "currently_in_meeting": currently_in_meeting,
+            "completed_sessions": completed_sessions,
+            "attendance_percentage": attendance_percentage,
+            "total_members": total_members,
+        },
+    )
+
+

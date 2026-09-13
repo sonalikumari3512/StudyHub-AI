@@ -1,7 +1,10 @@
 import json
 
 from channels.generic.websocket import AsyncWebsocketConsumer
-
+from asgiref.sync import sync_to_async
+from django.utils import timezone
+from math import ceil
+from .models import Room, Attendance
 
 # ============================================================
 # Active video room tracking
@@ -27,7 +30,43 @@ active_presenters = {}
 
 
 class VideoConsumer(AsyncWebsocketConsumer):
+    # ==========================================
+    # ATTENDANCE HELPERS
+    # ==========================================
 
+    @sync_to_async
+    def mark_join(self):
+        room = Room.objects.get(id=self.room_id)
+
+        Attendance.objects.create(
+            room=room,
+            student=self.user,
+            joined_at=timezone.now(),
+            is_present=True
+        )
+
+
+
+    @sync_to_async
+    def mark_leave(self):
+        attendance = Attendance.objects.filter(
+            room_id=self.room_id,
+            student=self.user,
+            left_at__isnull=True
+        ).order_by("-joined_at").first()
+
+        if attendance:
+            attendance.left_at = timezone.now()
+
+            duration = attendance.left_at - attendance.joined_at
+
+            # Round up to at least 1 minute if someone attended.
+            attendance.duration_minutes = max(
+                1,
+                ceil(duration.total_seconds() / 60)
+            )
+
+            attendance.save()
     # ========================================================
     # CONNECT
     # ========================================================
@@ -55,7 +94,8 @@ class VideoConsumer(AsyncWebsocketConsumer):
         )
 
         await self.accept()
-
+        # Attendance created here
+        await self.mark_join()
         # ----------------------------------------------------
         # Get/create room
         # ----------------------------------------------------
@@ -124,6 +164,8 @@ class VideoConsumer(AsyncWebsocketConsumer):
             self.channel_name
         )
 
+        # Attendance updated here
+        await self.mark_leave()
         # ----------------------------------------------------
         # Remove user from active room
         # ----------------------------------------------------

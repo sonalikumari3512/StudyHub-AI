@@ -66,6 +66,42 @@ class Message(models.Model):
         return self.body[:50]
 
 
+# ==========================================
+# ATTENDANCE
+# ==========================================
+
+class Attendance(models.Model):
+
+    room = models.ForeignKey(
+        Room,
+        on_delete=models.CASCADE,
+        related_name="attendance_records"
+    )
+
+    student = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE
+    )
+
+    joined_at = models.DateTimeField(auto_now_add=True)
+
+    left_at = models.DateTimeField(
+        blank=True,
+        null=True
+    )
+
+    duration_minutes = models.PositiveIntegerField(default=0)
+
+    is_present = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["-joined_at"]
+
+    def __str__(self):
+        return f"{self.student.username} - {self.room.name}"
+
+    
+
 class Announcement(models.Model):
 
     room = models.ForeignKey(
@@ -98,3 +134,4 @@ class Announcement(models.Model):
 
     def __str__(self):
         return self.title
+
