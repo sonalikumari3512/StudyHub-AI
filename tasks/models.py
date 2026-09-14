@@ -58,3 +58,33 @@ class Task(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class PomodoroSession(models.Model):
+
+    SESSION_TYPE_CHOICES = [
+        ("focus", "Focus"),
+        ("short_break", "Short Break"),
+        ("long_break", "Long Break"),
+    ]
+
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="pomodoro_sessions"
+    )
+
+    session_type = models.CharField(
+        max_length=20,
+        choices=SESSION_TYPE_CHOICES
+    )
+
+    duration_minutes = models.PositiveIntegerField()
+
+    completed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-completed_at"]
+
+    def __str__(self):
+        return f"{self.user.username} - {self.session_type} ({self.duration_minutes} min)"

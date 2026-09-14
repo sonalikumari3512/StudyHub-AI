@@ -1,0 +1,384 @@
+.pomodoro-page {
+    min-height: 90vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 30px 15px;
+    background: radial-gradient(circle at 50% 0%, #1a2234 0%, #0b0f19 60%);
+}
+
+.pomodoro-container {
+    width: 100%;
+    max-width: 480px;
+    background: rgba(31, 41, 55, 0.5);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 28px;
+    padding: 40px 32px;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+    color: white;
+}
+
+.pomodoro-header h2 {
+    font-size: 26px;
+    font-weight: 700;
+    margin-bottom: 6px;
+}
+
+.pomodoro-header p {
+    color: #9ca3af;
+    font-size: 14px;
+    margin-bottom: 30px;
+}
+
+/* ===================== MODE SELECTOR ===================== */
+
+.mode-selector {
+    display: inline-flex;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 5px;
+    border-radius: 30px;
+    margin-bottom: 36px;
+    gap: 4px;
+}
+
+.mode-btn {
+    background: transparent;
+    color: #9ca3af;
+    border: none;
+    padding: 9px 18px;
+    border-radius: 24px;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+
+.mode-btn:hover {
+    color: white;
+}
+
+.mode-btn.active {
+    background: linear-gradient(135deg, #f43f5e, #ec4899);
+    color: white;
+    box-shadow: 0 4px 14px rgba(244, 63, 94, 0.4);
+}
+
+/* ===================== TIMER RING ===================== */
+
+.timer-ring-wrapper {
+    position: relative;
+    width: 280px;
+    height: 280px;
+    margin: 0 auto 36px;
+}
+
+.timer-ring {
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+}
+
+.ring-bg {
+    fill: none;
+    stroke: rgba(255, 255, 255, 0.06);
+    stroke-width: 12;
+}
+
+.ring-progress {
+    fill: none;
+    stroke: url(#ringGradient);
+    stroke: #f43f5e;
+    stroke-width: 12;
+    stroke-linecap: round;
+    stroke-dasharray: 848;
+    stroke-dashoffset: 0;
+    transition: stroke-dashoffset 1s linear, stroke 0.4s ease;
+}
+
+.ring-progress.mode-focus {
+    stroke: #f43f5e;
+}
+
+.ring-progress.mode-short_break {
+    stroke: #22c55e;
+}
+
+.ring-progress.mode-long_break {
+    stroke: #3b82f6;
+}
+
+.timer-center {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+#timerText {
+    font-size: 58px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 1px;
+}
+
+.mode-label {
+    color: #9ca3af;
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-top: 6px;
+}
+
+/* ===================== CONTROLS ===================== */
+
+.timer-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 36px;
+}
+
+.timer-btn {
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    transition: transform 0.15s ease, opacity 0.2s ease;
+}
+
+.timer-btn:hover:not(:disabled) {
+    transform: scale(1.05);
+}
+
+.timer-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.timer-btn.primary {
+    background: linear-gradient(135deg, #f43f5e, #ec4899);
+    color: white;
+    padding: 16px 48px;
+    border-radius: 30px;
+    font-size: 16px;
+    box-shadow: 0 8px 24px rgba(244, 63, 94, 0.35);
+}
+
+.timer-btn.icon-btn {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.06);
+    color: white;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.timer-btn.icon-btn:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+/* ===================== STATS ===================== */
+
+.stats-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 18px;
+    padding: 18px 10px;
+}
+
+.stat-card {
+    flex: 1;
+}
+
+.stat-value {
+    font-size: 26px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #f43f5e, #ec4899);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+.stat-label {
+    font-size: 11.5px;
+    color: #9ca3af;
+    margin-top: 4px;
+    font-weight: 500;
+}
+
+.stat-divider {
+    width: 1px;
+    height: 36px;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+/* ===================== RESPONSIVE ===================== */
+
+@media (max-width: 500px) {
+    .pomodoro-container {
+        padding: 30px 20px;
+    }
+
+    .timer-ring-wrapper {
+        width: 230px;
+        height: 230px;
+    }
+
+    #timerText {
+        font-size: 46px;
+    }
+
+    .timer-btn.primary {
+        padding: 14px 36px;
+        font-size: 15px;
+    }
+}
+
+/* ===================== COMPACT / SIDEBAR MODE ===================== */
+
+.pomodoro-sticky {
+    position: sticky;
+    top: 20px;
+}
+
+.pomodoro-container.compact {
+    max-width: 100%;
+    padding: 28px 22px;
+}
+
+.pomodoro-container.compact .pomodoro-header h2 {
+    font-size: 20px;
+}
+
+.pomodoro-container.compact .pomodoro-header p {
+    display: none;
+}
+
+.pomodoro-container.compact .timer-ring-wrapper {
+    width: 190px;
+    height: 190px;
+    margin-bottom: 24px;
+}
+
+.pomodoro-container.compact #timerText {
+    font-size: 38px;
+}
+
+.pomodoro-container.compact .mode-label {
+    font-size: 11px;
+}
+
+.pomodoro-container.compact .mode-selector {
+    margin-bottom: 24px;
+}
+
+.pomodoro-container.compact .mode-btn {
+    padding: 7px 12px;
+    font-size: 11.5px;
+}
+
+.pomodoro-container.compact .timer-btn.primary {
+    padding: 12px 32px;
+    font-size: 14px;
+}
+
+.pomodoro-container.compact .timer-btn.icon-btn {
+    width: 44px;
+    height: 44px;
+    font-size: 15px;
+}
+
+.pomodoro-container.compact .timer-controls {
+    gap: 14px;
+    margin-bottom: 24px;
+}
+
+.pomodoro-container.compact .stat-value {
+    font-size: 20px;
+}
+
+.pomodoro-container.compact .stat-label {
+    font-size: 10px;
+}
+/* ===================== LIGHT THEME (embedded sidebar) ===================== */
+
+.pomodoro-container.light {
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+    color: #1f2937;
+    backdrop-filter: none;
+}
+
+.pomodoro-container.light .pomodoro-header h2 {
+    color: #1f2937;
+}
+
+.pomodoro-container.light .pomodoro-header p {
+    color: #6b7280;
+}
+
+.pomodoro-container.light .mode-selector {
+    background: #f3f4f6;
+}
+
+.pomodoro-container.light .mode-btn {
+    color: #6b7280;
+}
+
+.pomodoro-container.light .mode-btn:hover {
+    color: #1f2937;
+}
+
+.pomodoro-container.light .mode-btn.active {
+    background: linear-gradient(135deg, #f43f5e, #ec4899);
+    color: white;
+}
+
+.pomodoro-container.light .ring-bg {
+    stroke: #e5e7eb;
+}
+
+.pomodoro-container.light #timerText {
+    color: #1f2937;
+}
+
+.pomodoro-container.light .mode-label {
+    color: #9ca3af;
+}
+
+.pomodoro-container.light .timer-btn.icon-btn {
+    background: #f3f4f6;
+    color: #1f2937;
+}
+
+.pomodoro-container.light .timer-btn.icon-btn:hover:not(:disabled) {
+    background: #e5e7eb;
+}
+
+.pomodoro-container.light .stats-bar {
+    background: #f9fafb;
+}
+
+.pomodoro-container.light .stat-label {
+    color: #6b7280;
+}
+
+.pomodoro-container.light .stat-divider {
+    background: #e5e7eb;
+}

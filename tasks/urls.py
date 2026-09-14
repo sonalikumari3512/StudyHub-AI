@@ -13,4 +13,8 @@ urlpatterns = [
 
     path("<int:pk>/delete/", views.delete_task, name="delete_task"),
 
+    path("pomodoro/", views.pomodoro_view, name="pomodoro"),
+
+    path("pomodoro/save/", views.save_pomodoro_session, name="save_pomodoro_session"),
+
 ]

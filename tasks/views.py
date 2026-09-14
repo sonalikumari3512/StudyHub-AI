@@ -2,9 +2,33 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
+import json
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
 
-from .models import Task
+from .models import Task,PomodoroSession
 from .forms import TaskForm
+
+
+
+def get_pomodoro_stats(user):
+    today = timezone.now().date()
+
+    today_sessions = PomodoroSession.objects.filter(
+        user=user,
+        completed_at__date=today
+    )
+
+    focus_sessions_today = today_sessions.filter(session_type="focus")
+
+    today_minutes = sum(
+        s.duration_minutes for s in focus_sessions_today
+    )
+
+    session_count = focus_sessions_today.count()
+
+    return today_minutes, session_count
+
 
 
 @login_required
@@ -24,6 +48,8 @@ def task_list(request):
     if total:
         progress = int((completed/total)*100)
 
+    today_minutes, session_count = get_pomodoro_stats(request.user)
+
     return render(request, "tasks/task_list.html", {
         "tasks": tasks,
         "total": total,
@@ -31,8 +57,9 @@ def task_list(request):
         "pending": pending,
         "overdue": overdue,
         "progress": progress,
+        "today_minutes": today_minutes,
+        "session_count": session_count,
     })
-
 
 @login_required
 def create_task(request):
@@ -113,3 +140,42 @@ def delete_task(request, pk):
 
     messages.success(request, "Task deleted.")
     return redirect("task_list")
+
+
+@login_required
+def pomodoro_view(request):
+    today_minutes, session_count = get_pomodoro_stats(request.user)
+
+    return render(request, "tasks/pomodoro.html", {
+        "today_minutes": today_minutes,
+        "session_count": session_count,
+    })
+
+
+@login_required
+@require_POST
+def save_pomodoro_session(request):
+    try:
+        data = json.loads(request.body)
+        session_type = data.get("session_type")
+        duration_minutes = data.get("duration_minutes")
+
+        if session_type not in ("focus", "short_break", "long_break"):
+            return JsonResponse({"error": "Invalid session type"}, status=400)
+
+        PomodoroSession.objects.create(
+            user=request.user,
+            session_type=session_type,
+            duration_minutes=duration_minutes
+        )
+
+        today_minutes, session_count = get_pomodoro_stats(request.user)
+
+        return JsonResponse({
+            "success": True,
+            "today_minutes": today_minutes,
+            "session_count": session_count,
+        })
+
+    except (json.JSONDecodeError, TypeError, ValueError):
+        return JsonResponse({"error": "Invalid data"}, status=400)

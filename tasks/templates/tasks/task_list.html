@@ -4,6 +4,7 @@
 {% block content %}
 
 <link rel="stylesheet" href="{% static 'tasks/task.css' %}">
+<link rel="stylesheet" href="{% static 'tasks/pomodoro.css' %}">
 
 <div class="container py-4">
 
@@ -93,143 +94,209 @@
         </a>
     </div>
 
-    <!-- ================= Task List ================= -->
-
-    {% if tasks %}
+    <!-- ================= Main Row: Tasks + Pomodoro Sidebar ================= -->
 
     <div class="row g-4">
 
-        {% for task in tasks %}
+        <!-- ================= Task List Column ================= -->
+        <div class="col-lg-8">
 
-        <div class="col-lg-6">
+            {% if tasks %}
 
-            <div class="card task-card shadow-sm rounded-4 border-0 h-100">
+            <div class="row g-4">
 
-                <div class="card-body">
+                {% for task in tasks %}
 
-                    <div class="d-flex justify-content-between align-items-start">
+                <div class="col-md-6">
 
-                        <div>
+                    <div class="card task-card shadow-sm rounded-4 border-0 h-100">
 
-                            {% if task.completed %}
-                                <h5 class="text-decoration-line-through text-muted">
-                                    {{ task.title }}
-                                </h5>
-                            {% else %}
-                                <h5>{{ task.title }}</h5>
-                            {% endif %}
+                        <div class="card-body">
 
-                            <span class="badge bg-info">
-                                {{ task.category }}
+                            <div class="d-flex justify-content-between align-items-start">
+
+                                <div>
+
+                                    {% if task.completed %}
+                                        <h5 class="text-decoration-line-through text-muted">
+                                            {{ task.title }}
+                                        </h5>
+                                    {% else %}
+                                        <h5>{{ task.title }}</h5>
+                                    {% endif %}
+
+                                    <span class="badge bg-info">
+                                        {{ task.category }}
+                                    </span>
+
+                                    {% if task.priority == "High" %}
+                                        <span class="badge bg-danger">High</span>
+
+                                    {% elif task.priority == "Medium" %}
+                                        <span class="badge bg-warning text-dark">Medium</span>
+
+                                    {% else %}
+                                        <span class="badge bg-success">Low</span>
+
+                                    {% endif %}
+
+                                </div>
+
+                            </div>
+
+                            <hr>
+
+                            <p>{{ task.description }}</p>
+
+                            <div class="mb-2">
+
+                                <small class="text-muted">
+                                    📅 Due: {{ task.due_date }}
+                                </small>
+
+                            </div>
+
+                            {% if task.is_overdue %}
+
+                            <span class="badge bg-danger mb-3">
+                                ⚠️ Overdue
                             </span>
 
-                            {% if task.priority == "High" %}
-                                <span class="badge bg-danger">High</span>
+                            {% elif task.completed %}
 
-                            {% elif task.priority == "Medium" %}
-                                <span class="badge bg-warning text-dark">Medium</span>
+                            <span class="badge bg-success mb-3">
+                                ✅ Completed
+                            </span>
 
                             {% else %}
-                                <span class="badge bg-success">Low</span>
+
+                            <span class="badge bg-primary mb-3">
+                                ⏳ Pending
+                            </span>
 
                             {% endif %}
+
+                            <div class="d-flex flex-wrap gap-2 mt-3">
+
+                                <a href="{% url 'toggle_task' task.id %}"
+                                   class="btn btn-success btn-sm">
+
+                                    {% if task.completed %}
+                                        ↩ Undo
+                                    {% else %}
+                                        ✔ Complete
+                                    {% endif %}
+
+                                </a>
+
+                                <a href="{% url 'edit_task' task.id %}"
+                                   class="btn btn-warning btn-sm">
+                                    ✏️ Edit
+                                </a>
+
+                                <a href="{% url 'delete_task' task.id %}"
+                                   class="btn btn-danger btn-sm">
+                                    🗑 Delete
+                                </a>
+
+                            </div>
 
                         </div>
 
                     </div>
 
-                    <hr>
+                </div>
 
-                    <p>{{ task.description }}</p>
+                {% endfor %}
 
-                    <div class="mb-2">
+            </div>
 
-                        <small class="text-muted">
-                            📅 Due: {{ task.due_date }}
-                        </small>
+            {% else %}
 
-                    </div>
+            <div class="card shadow-sm rounded-4 border-0 text-center py-5">
 
-                    {% if task.is_overdue %}
+                <div class="card-body">
 
-                    <span class="badge bg-danger mb-3">
-                        ⚠️ Overdue
-                    </span>
+                    <h1>📋</h1>
 
-                    {% elif task.completed %}
+                    <h4>No Tasks Yet</h4>
 
-                    <span class="badge bg-success mb-3">
-                        ✅ Completed
-                    </span>
+                    <p class="text-muted">
+                        Start planning your study schedule today.
+                    </p>
 
-                    {% else %}
-
-                    <span class="badge bg-primary mb-3">
-                        ⏳ Pending
-                    </span>
-
-                    {% endif %}
-
-                    <div class="d-flex flex-wrap gap-2 mt-3">
-
-                        <a href="{% url 'toggle_task' task.id %}"
-                           class="btn btn-success btn-sm">
-
-                            {% if task.completed %}
-                                ↩ Undo
-                            {% else %}
-                                ✔ Complete
-                            {% endif %}
-
-                        </a>
-
-                        <a href="{% url 'edit_task' task.id %}"
-                           class="btn btn-warning btn-sm">
-                            ✏️ Edit
-                        </a>
-
-                        <a href="{% url 'delete_task' task.id %}"
-                           class="btn btn-danger btn-sm">
-                            🗑 Delete
-                        </a>
-
-                    </div>
+                    <a href="{% url 'create_task' %}"
+                       class="btn btn-primary rounded-pill">
+                        ➕ Create First Task
+                    </a>
 
                 </div>
 
             </div>
 
-        </div>
-
-        {% endfor %}
-
-    </div>
-
-    {% else %}
-
-    <div class="card shadow-sm rounded-4 border-0 text-center py-5">
-
-        <div class="card-body">
-
-            <h1>📋</h1>
-
-            <h4>No Tasks Yet</h4>
-
-            <p class="text-muted">
-                Start planning your study schedule today.
-            </p>
-
-            <a href="{% url 'create_task' %}"
-               class="btn btn-primary rounded-pill">
-                ➕ Create First Task
-            </a>
+            {% endif %}
 
         </div>
 
-    </div>
+        <!-- ================= Pomodoro Sidebar ================= -->
+        <div class="col-lg-4">
 
-    {% endif %}
+            <div class="pomodoro-container compact light">
+
+                <div class="pomodoro-header">
+                    <h2>🍅 Pomodoro Timer</h2>
+                </div>
+
+                <div class="mode-selector">
+                    <button class="mode-btn active" data-mode="focus" data-duration="25">Focus</button>
+                    <button class="mode-btn" data-mode="short_break" data-duration="5">Short</button>
+                    <button class="mode-btn" data-mode="long_break" data-duration="15">Long</button>
+                </div>
+
+                <div class="timer-ring-wrapper">
+                    <svg class="timer-ring" viewBox="0 0 300 300">
+                        <circle class="ring-bg" cx="150" cy="150" r="135"></circle>
+                        <circle id="ringProgress" class="ring-progress" cx="150" cy="150" r="135"></circle>
+                    </svg>
+
+                    <div class="timer-center">
+                        <span id="timerText">25:00</span>
+                        <span id="modeLabel" class="mode-label">Focus Session</span>
+                    </div>
+                </div>
+
+                <div class="timer-controls">
+                    <button id="resetBtn" class="timer-btn icon-btn" title="Reset">↺</button>
+                    <button id="startBtn" class="timer-btn primary">Start</button>
+                    <button id="pauseBtn" class="timer-btn icon-btn" title="Pause" disabled>⏸</button>
+                </div>
+
+                <div class="stats-bar">
+                    <div class="stat-card">
+                        <div class="stat-value" id="sessionCount">{{ session_count }}</div>
+                        <div class="stat-label">Sessions Today</div>
+                    </div>
+                    <div class="stat-divider"></div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="todayMinutes">{{ today_minutes }}</div>
+                        <div class="stat-label">Minutes Today</div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
 
 </div>
+
+<script>
+    window.pomodoroConfig = {
+        saveSessionUrl: "{% url 'save_pomodoro_session' %}",
+        csrfToken: "{{ csrf_token }}"
+    };
+</script>
+
+<script src="{% static 'tasks/pomodoro.js' %}"></script>
 
 {% endblock %}
